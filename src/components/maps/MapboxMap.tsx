@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -230,45 +229,49 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     return el;
   };
 
-  const createVesselPopup = (vessel: VesselData) => {
-    return new mapboxgl.Popup({ offset: 25 })
-      .setHTML(`
-        <div class="p-3 bg-slate-900 rounded">
-          <h3 class="font-semibold text-sm text-white mb-2">${vessel.name}</h3>
-          <div class="space-y-1 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-300">ID:</span>
-              <span class="text-cyan-400 font-mono">${vessel.id}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-300">Status:</span>
-              <span class="text-${vessel.status === 'active' ? 'green' : vessel.status === 'warning' ? 'yellow' : vessel.status === 'danger' ? 'red' : 'gray'}-400">${vessel.status.toUpperCase()}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-300">Speed:</span>
-              <span class="text-white">${vessel.speed.toFixed(1)} kts</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-300">Heading:</span>
-              <span class="text-white">${vessel.heading.toFixed(0)}°</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-300">Type:</span>
-              <span class="text-white">${vessel.vesselType}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-300">Last Update:</span>
-              <span class="text-slate-400">${new Date(vessel.lastUpdate).toLocaleTimeString()}</span>
-            </div>
+  const createVesselPopupHTML = (vessel: VesselData) => {
+    return `
+      <div class="p-3 bg-slate-900 rounded">
+        <h3 class="font-semibold text-sm text-white mb-2">${vessel.name}</h3>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-300">ID:</span>
+            <span class="text-cyan-400 font-mono">${vessel.id}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Status:</span>
+            <span class="text-${vessel.status === 'active' ? 'green' : vessel.status === 'warning' ? 'yellow' : vessel.status === 'danger' ? 'red' : 'gray'}-400">${vessel.status.toUpperCase()}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Speed:</span>
+            <span class="text-white">${vessel.speed.toFixed(1)} kts</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Heading:</span>
+            <span class="text-white">${vessel.heading.toFixed(0)}°</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Type:</span>
+            <span class="text-white">${vessel.vesselType}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Last Update:</span>
+            <span class="text-slate-400">${new Date(vessel.lastUpdate).toLocaleTimeString()}</span>
           </div>
         </div>
-      `);
+      </div>
+    `;
+  };
+
+  const createVesselPopup = (vessel: VesselData) => {
+    return new mapboxgl.Popup({ offset: 25 })
+      .setHTML(createVesselPopupHTML(vessel));
   };
 
   const updateVesselPopup = (marker: mapboxgl.Marker, vessel: VesselData) => {
     const popup = marker.getPopup();
     if (popup) {
-      popup.setHTML(createVesselPopup(vessel).getHTML());
+      popup.setHTML(createVesselPopupHTML(vessel));
     }
   };
 
