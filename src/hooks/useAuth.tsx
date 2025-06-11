@@ -51,7 +51,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -59,15 +62,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+
+        console.log('Auth state changed:', event, session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Use setTimeout to avoid calling Supabase functions inside the callback
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            if (mounted) {
+              fetchProfile(session.user.id);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -78,17 +90,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setIsLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
 
-    return () => subscription.unsubscribe();
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          }
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -102,9 +136,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) throw error;
       
       if (data.user) {
-        window.location.href = '/';
+        // Navigation will be handled by the auth state change listener
+        console.log('Login successful');
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       throw new Error(error.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
@@ -129,11 +165,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (error) throw error;
       
-      if (data.user) {
-        // User created successfully
-        return;
-      }
+      console.log('Signup successful:', data.user?.id);
     } catch (error: any) {
+      console.error('Signup error:', error);
       throw new Error(error.message || 'Signup failed');
     } finally {
       setIsLoading(false);
@@ -142,10 +176,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'global' });
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       setUser(null);
       setProfile(null);
       setSession(null);
+      
+      // Force redirect to auth page
       window.location.href = '/auth';
     } catch (error) {
       console.error('Error signing out:', error);
