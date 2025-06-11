@@ -1,11 +1,13 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Ship, AlertTriangle, Search, Filter, Eye } from "lucide-react";
+import { Ship, AlertTriangle, Search, Filter, Eye, Brain } from "lucide-react";
 import MapboxMap from "@/components/maps/MapboxMap";
 import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
+import DetectionDashboard from "@/components/ghost-fleet/DetectionDashboard";
 import { useState } from "react";
 
 const GhostFleet = () => {
@@ -23,6 +25,10 @@ const GhostFleet = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Ghost Fleet Tracking</h1>
         <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="text-red-400 border-red-400">
+            <Brain className="h-3 w-3 mr-1" />
+            AI ENHANCED
+          </Badge>
           <Badge variant="outline" className="text-red-400 border-red-400">
             156 DARK VESSELS
           </Badge>
@@ -54,14 +60,19 @@ const GhostFleet = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="active" className="space-y-6">
+      <Tabs defaultValue="detection" className="space-y-6">
         <TabsList className="bg-slate-800 border-slate-700">
-          <TabsTrigger value="active">Active Tracking</TabsTrigger>
+          <TabsTrigger value="detection">AI Detection</TabsTrigger>
+          <TabsTrigger value="tracking">Live Tracking</TabsTrigger>
           <TabsTrigger value="analysis">Behavior Analysis</TabsTrigger>
           <TabsTrigger value="alerts">Anomaly Alerts</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active" className="space-y-6">
+        <TabsContent value="detection" className="space-y-6">
+          <DetectionDashboard />
+        </TabsContent>
+
+        <TabsContent value="tracking" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-3">
               <Card className="bg-slate-800 border-slate-700">
@@ -219,13 +230,27 @@ const GhostFleet = () => {
         <TabsContent value="analysis">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Behavioral Pattern Analysis</CardTitle>
+              <CardTitle className="text-white">AI-Powered Behavioral Pattern Analysis</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
-                <AlertTriangle className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Advanced Analytics</h3>
-                <p className="text-slate-400">AI-powered behavior analysis and pattern recognition for ghost fleet identification.</p>
+                <Brain className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Advanced ML Analytics</h3>
+                <p className="text-slate-400">Machine learning algorithms analyzing vessel behavior patterns in real-time for enhanced ghost fleet identification.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                  <div className="p-4 bg-slate-900 rounded-lg">
+                    <h4 className="text-cyan-400 font-medium">Pattern Recognition</h4>
+                    <p className="text-slate-400 text-sm mt-1">Identifies suspicious movement patterns</p>
+                  </div>
+                  <div className="p-4 bg-slate-900 rounded-lg">
+                    <h4 className="text-cyan-400 font-medium">Route Analysis</h4>
+                    <p className="text-slate-400 text-sm mt-1">Detects unusual route deviations</p>
+                  </div>
+                  <div className="p-4 bg-slate-900 rounded-lg">
+                    <h4 className="text-cyan-400 font-medium">Identity Tracking</h4>
+                    <p className="text-slate-400 text-sm mt-1">Monitors vessel identity changes</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -234,15 +259,16 @@ const GhostFleet = () => {
         <TabsContent value="alerts">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Anomaly Detection Alerts</CardTitle>
+              <CardTitle className="text-white">Enhanced Anomaly Detection Alerts</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { time: "5 min ago", alert: "Vessel turned off AIS in restricted zone", level: "critical" },
-                  { time: "23 min ago", alert: "Unusual route deviation detected", level: "high" },
-                  { time: "1 hour ago", alert: "Ship-to-ship transfer in dark waters", level: "critical" },
-                  { time: "2 hours ago", alert: "Vessel name change without proper documentation", level: "medium" },
+                  { time: "2 min ago", alert: "AI detected vessel AIS manipulation pattern", level: "critical", confidence: "94%" },
+                  { time: "5 min ago", alert: "Vessel turned off AIS in restricted zone", level: "critical", confidence: "89%" },
+                  { time: "23 min ago", alert: "Unusual route deviation detected by ML algorithm", level: "high", confidence: "76%" },
+                  { time: "1 hour ago", alert: "Ship-to-ship transfer in dark waters", level: "critical", confidence: "91%" },
+                  { time: "2 hours ago", alert: "Speed anomaly pattern suggests evasive behavior", level: "medium", confidence: "68%" },
                 ].map((alert, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-slate-900 rounded-lg border border-slate-700">
                     <div className="flex items-center space-x-3">
@@ -253,19 +279,27 @@ const GhostFleet = () => {
                       }`} />
                       <div>
                         <p className="text-white">{alert.alert}</p>
-                        <p className="text-xs text-slate-400">{alert.time}</p>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <p className="text-xs text-slate-400">{alert.time}</p>
+                          <p className="text-xs text-cyan-400">Confidence: {alert.confidence}</p>
+                        </div>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`${
-                        alert.level === 'critical' ? 'text-red-400 border-red-400' :
-                        alert.level === 'high' ? 'text-orange-400 border-orange-400' :
-                        'text-yellow-400 border-yellow-400'
-                      }`}
-                    >
-                      {alert.level.toUpperCase()}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant="outline"
+                        className={`${
+                          alert.level === 'critical' ? 'text-red-400 border-red-400' :
+                          alert.level === 'high' ? 'text-orange-400 border-orange-400' :
+                          'text-yellow-400 border-yellow-400'
+                        }`}
+                      >
+                        {alert.level.toUpperCase()}
+                      </Badge>
+                      <Button size="sm" variant="outline" className="border-slate-600">
+                        Investigate
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

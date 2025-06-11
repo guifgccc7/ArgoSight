@@ -1,4 +1,3 @@
-
 export interface VesselData {
   id: string;
   name: string;
@@ -9,6 +8,12 @@ export interface VesselData {
   status: 'active' | 'warning' | 'danger' | 'dark';
   lastUpdate: string;
   vesselType: string;
+  suspiciousActivity?: {
+    aisGap: boolean;
+    routeDeviation: boolean;
+    speedAnomaly: boolean;
+    identitySwitch: boolean;
+  };
 }
 
 export interface WeatherData {
@@ -34,7 +39,7 @@ class LiveDataService {
   private subscribers: Set<(data: any) => void> = new Set();
   private simulationInterval: NodeJS.Timeout | null = null;
 
-  // Simulate live vessel data
+  // Enhanced vessel data generation with suspicious activity simulation
   generateMockVesselData(): VesselData[] {
     const vessels: VesselData[] = [
       {
@@ -46,7 +51,13 @@ class LiveDataService {
         heading: Math.random() * 360,
         status: 'active',
         lastUpdate: new Date().toISOString(),
-        vesselType: 'cargo'
+        vesselType: 'cargo',
+        suspiciousActivity: {
+          aisGap: false,
+          routeDeviation: Math.random() > 0.9,
+          speedAnomaly: Math.random() > 0.85,
+          identitySwitch: false
+        }
       },
       {
         id: "IMO-002",
@@ -57,18 +68,64 @@ class LiveDataService {
         heading: Math.random() * 360,
         status: Math.random() > 0.8 ? 'warning' : 'active',
         lastUpdate: new Date().toISOString(),
-        vesselType: 'tanker'
+        vesselType: 'tanker',
+        suspiciousActivity: {
+          aisGap: Math.random() > 0.95,
+          routeDeviation: Math.random() > 0.8,
+          speedAnomaly: Math.random() > 0.9,
+          identitySwitch: Math.random() > 0.98
+        }
       },
       {
         id: "UNKNOWN-003",
-        name: "Ghost Vessel",
+        name: "Ghost Vessel Alpha",
         lat: 51.5074 + (Math.random() - 0.5) * 0.2,
         lng: -0.1278 + (Math.random() - 0.5) * 0.2,
         speed: 0,
         heading: 0,
         status: 'dark',
         lastUpdate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        vesselType: 'unknown'
+        vesselType: 'unknown',
+        suspiciousActivity: {
+          aisGap: true,
+          routeDeviation: true,
+          speedAnomaly: true,
+          identitySwitch: Math.random() > 0.7
+        }
+      },
+      {
+        id: "UNKNOWN-004",
+        name: "Shadow Runner",
+        lat: 25.2048 + (Math.random() - 0.5) * 0.15,
+        lng: 55.2708 + (Math.random() - 0.5) * 0.15,
+        speed: Math.random() * 5,
+        heading: Math.random() * 360,
+        status: 'dark',
+        lastUpdate: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        vesselType: 'fishing',
+        suspiciousActivity: {
+          aisGap: true,
+          routeDeviation: true,
+          speedAnomaly: false,
+          identitySwitch: true
+        }
+      },
+      {
+        id: "IMO-005",
+        name: "Northern Explorer",
+        lat: 70.2 + (Math.random() - 0.5) * 0.1,
+        lng: -150.0 + (Math.random() - 0.5) * 0.1,
+        speed: 6 + Math.random() * 4,
+        heading: Math.random() * 360,
+        status: Math.random() > 0.7 ? 'warning' : 'active',
+        lastUpdate: new Date().toISOString(),
+        vesselType: 'research',
+        suspiciousActivity: {
+          aisGap: false,
+          routeDeviation: Math.random() > 0.8,
+          speedAnomaly: false,
+          identitySwitch: false
+        }
       }
     ];
 
@@ -94,24 +151,35 @@ class LiveDataService {
     }));
   }
 
-  // Generate mock threat alerts
+  // Enhanced alert generation with AI detection focus
   generateMockAlerts(): ThreatAlert[] {
     const alerts: ThreatAlert[] = [];
     
-    if (Math.random() > 0.7) {
+    if (Math.random() > 0.6) {
       alerts.push({
         id: `alert-${Date.now()}`,
         type: 'ghost_vessel',
+        severity: Math.random() > 0.7 ? 'critical' : 'high',
+        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        description: 'AI detected vessel AIS manipulation pattern',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (Math.random() > 0.7) {
+      alerts.push({
+        id: `alert-${Date.now() + 1}`,
+        type: 'security',
         severity: 'high',
         location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
-        description: 'Vessel disappeared from AIS tracking',
+        description: 'Unusual vessel behavior detected by ML algorithms',
         timestamp: new Date().toISOString()
       });
     }
 
     if (Math.random() > 0.8) {
       alerts.push({
-        id: `alert-${Date.now() + 1}`,
+        id: `alert-${Date.now() + 2}`,
         type: 'weather',
         severity: 'medium',
         location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
