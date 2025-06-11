@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import ClimateSecurityPanel from "@/components/ClimateSecurityPanel";
 import MapboxMap from "@/components/maps/MapboxMap";
+import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
 import { Ship, Satellite, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { liveDataService } from "@/services/liveDataService";
 
 const Index = () => {
   const [liveData, setLiveData] = useState<any>(null);
   const [isLiveDataActive, setIsLiveDataActive] = useState(false);
+  const [selectedVessel, setSelectedVessel] = useState<string>('');
 
   useEffect(() => {
     // Start live data feed
@@ -20,7 +22,7 @@ const Index = () => {
     // Subscribe to live data updates
     const unsubscribe = liveDataService.subscribe((data) => {
       setLiveData(data);
-      console.log('Live data update:', data);
+      console.log('Dashboard live data update:', data);
     });
 
     // Cleanup
@@ -107,29 +109,42 @@ const Index = () => {
         </Card>
       </div>
 
-      {/* Live Maritime Map */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center space-x-2">
-            <span>Global Maritime Activity</span>
-            {isLiveDataActive && (
-              <Badge variant="outline" className="text-green-400 border-green-400">
-                <Activity className="h-3 w-3 mr-1" />
-                LIVE
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-96">
-            <MapboxMap 
-              showVessels={true}
-              showRoutes={true}
-              style="mapbox://styles/mapbox/dark-v11"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Enhanced Live Maritime Map with Vessel Tracking */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center space-x-2">
+                <span>Global Maritime Activity</span>
+                {isLiveDataActive && (
+                  <Badge variant="outline" className="text-green-400 border-green-400">
+                    <Activity className="h-3 w-3 mr-1" />
+                    LIVE
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-96">
+                <MapboxMap 
+                  showVessels={true}
+                  showRoutes={true}
+                  showAlerts={true}
+                  style="mapbox://styles/mapbox/dark-v11"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <VesselTrackingPanel 
+            focusMode="all"
+            selectedVessel={selectedVessel}
+            onVesselSelect={setSelectedVessel}
+          />
+        </div>
+      </div>
 
       {/* Climate Security Panel */}
       <ClimateSecurityPanel />

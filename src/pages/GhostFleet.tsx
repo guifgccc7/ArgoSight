@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ship, AlertTriangle, Search, Filter, Eye } from "lucide-react";
 import MapboxMap from "@/components/maps/MapboxMap";
+import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
+import { useState } from "react";
 
 const GhostFleet = () => {
+  const [selectedVessel, setSelectedVessel] = useState<string>('');
+
   const ghostVessels = [
     { id: "GV-001", name: "Unknown Tanker", lastSeen: "2 hours ago", location: "North Pacific", risk: "high" },
     { id: "GV-002", name: "Cargo Vessel X", lastSeen: "6 hours ago", location: "South China Sea", risk: "medium" },
@@ -58,8 +62,8 @@ const GhostFleet = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
               <Card className="bg-slate-800 border-slate-700">
                 <CardHeader>
                   <CardTitle className="text-white">Dark Vessel Detection Map</CardTitle>
@@ -69,6 +73,8 @@ const GhostFleet = () => {
                     <MapboxMap 
                       showVessels={true}
                       showRoutes={false}
+                      showAlerts={true}
+                      focusMode="ghost"
                       style="mapbox://styles/mapbox/dark-v11"
                       center={[30, 40]}
                       zoom={3}
@@ -79,79 +85,85 @@ const GhostFleet = () => {
             </div>
 
             <div className="space-y-6">
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Detection Stats</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-slate-300">Total Dark Vessels</span>
-                      <span className="text-red-400 font-bold">156</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-300">New This Week</span>
-                      <span className="text-yellow-400 font-bold">23</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-300">High Risk</span>
-                      <span className="text-red-400 font-bold">47</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-300">Under Investigation</span>
-                      <span className="text-cyan-400 font-bold">89</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Risk Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Critical</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 h-2 bg-slate-700 rounded-full">
-                          <div className="w-8 h-2 bg-red-500 rounded-full"></div>
-                        </div>
-                        <span className="text-sm text-red-400">30%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300">High</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 h-2 bg-slate-700 rounded-full">
-                          <div className="w-12 h-2 bg-orange-500 rounded-full"></div>
-                        </div>
-                        <span className="text-sm text-orange-400">40%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Medium</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 h-2 bg-slate-700 rounded-full">
-                          <div className="w-10 h-2 bg-yellow-500 rounded-full"></div>
-                        </div>
-                        <span className="text-sm text-yellow-400">20%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Low</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 h-2 bg-slate-700 rounded-full">
-                          <div className="w-4 h-2 bg-green-500 rounded-full"></div>
-                        </div>
-                        <span className="text-sm text-green-400">10%</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <VesselTrackingPanel 
+                focusMode="ghost"
+                selectedVessel={selectedVessel}
+                onVesselSelect={setSelectedVessel}
+              />
             </div>
           </div>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Detection Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-slate-300">Total Dark Vessels</span>
+                  <span className="text-red-400 font-bold">156</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-300">New This Week</span>
+                  <span className="text-yellow-400 font-bold">23</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-300">High Risk</span>
+                  <span className="text-red-400 font-bold">47</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-300">Under Investigation</span>
+                  <span className="text-cyan-400 font-bold">89</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Risk Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">Critical</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 h-2 bg-slate-700 rounded-full">
+                      <div className="w-8 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span className="text-sm text-red-400">30%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">High</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 h-2 bg-slate-700 rounded-full">
+                      <div className="w-12 h-2 bg-orange-500 rounded-full"></div>
+                    </div>
+                    <span className="text-sm text-orange-400">40%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">Medium</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 h-2 bg-slate-700 rounded-full">
+                      <div className="w-10 h-2 bg-yellow-500 rounded-full"></div>
+                    </div>
+                    <span className="text-sm text-yellow-400">20%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">Low</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-20 h-2 bg-slate-700 rounded-full">
+                      <div className="w-4 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+                    <span className="text-sm text-green-400">10%</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
