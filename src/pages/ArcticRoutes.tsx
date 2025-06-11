@@ -1,10 +1,14 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Snowflake, Route, Thermometer, Wind, Ship, TrendingUp } from "lucide-react";
+import IceCoverageChart from "@/components/charts/IceCoverageChart";
+import VesselTrafficChart from "@/components/charts/VesselTrafficChart";
+import RouteSavingsChart from "@/components/charts/RouteSavingsChart";
+import WeatherPanel from "@/components/arctic/WeatherPanel";
+import MapboxMap from "@/components/maps/MapboxMap";
 
 const ArcticRoutes = () => {
   const routes = [
@@ -110,6 +114,7 @@ const ArcticRoutes = () => {
           <TabsTrigger value="conditions">Ice Conditions</TabsTrigger>
           <TabsTrigger value="traffic">Traffic Analysis</TabsTrigger>
           <TabsTrigger value="forecast">Weather Forecast</TabsTrigger>
+          <TabsTrigger value="analytics">Route Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="map" className="space-y-6">
@@ -119,14 +124,16 @@ const ArcticRoutes = () => {
                 <CardHeader>
                   <CardTitle className="text-white">Arctic Navigation Map</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-96 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-600">
-                    <div className="text-center">
-                      <Snowflake className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">Interactive Arctic Map</h3>
-                      <p className="text-slate-400">Real-time ice conditions and route planning</p>
-                    </div>
-                  </div>
+                <CardContent className="p-0">
+                  <MapboxMap 
+                    className="h-96 rounded-b-lg"
+                    focusMode="arctic"
+                    showRoutes={true}
+                    showVessels={true}
+                    showAlerts={true}
+                    center={[90, 75]}
+                    zoom={3}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -207,56 +214,78 @@ const ArcticRoutes = () => {
         </TabsContent>
 
         <TabsContent value="conditions">
-          <Card className="bg-slate-800 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Ice Condition Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Snowflake className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Real-Time Ice Monitoring</h3>
-                <p className="text-slate-400">Comprehensive ice thickness, coverage, and movement analysis.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Annual Ice Coverage Trends</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <IceCoverageChart />
+              </CardContent>
+            </Card>
+
+            <WeatherPanel />
+          </div>
         </TabsContent>
 
         <TabsContent value="traffic">
-          <Card className="bg-slate-800 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Arctic Traffic Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-slate-900 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-white">55</div>
-                  <div className="text-sm text-slate-400">Vessels This Season</div>
-                  <div className="text-xs text-green-400">+23% vs 2023</div>
+          <div className="space-y-6">
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Arctic Traffic Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-white">55</div>
+                    <div className="text-sm text-slate-400">Vessels This Season</div>
+                    <div className="text-xs text-green-400">+23% vs 2023</div>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-white">12.4M</div>
+                    <div className="text-sm text-slate-400">Tons Cargo</div>
+                    <div className="text-xs text-green-400">+18% vs 2023</div>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-white">156</div>
+                    <div className="text-sm text-slate-400">Transit Days Saved</div>
+                    <div className="text-xs text-cyan-400">Per route</div>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <div className="text-2xl font-bold text-white">$2.1B</div>
+                    <div className="text-sm text-slate-400">Cost Savings</div>
+                    <div className="text-xs text-green-400">Industry total</div>
+                  </div>
                 </div>
-                <div className="bg-slate-900 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-white">12.4M</div>
-                  <div className="text-sm text-slate-400">Tons Cargo</div>
-                  <div className="text-xs text-green-400">+18% vs 2023</div>
-                </div>
-                <div className="bg-slate-900 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-white">156</div>
-                  <div className="text-sm text-slate-400">Transit Days Saved</div>
-                  <div className="text-xs text-cyan-400">Per route</div>
-                </div>
-                <div className="bg-slate-900 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-white">$2.1B</div>
-                  <div className="text-sm text-slate-400">Cost Savings</div>
-                  <div className="text-xs text-green-400">Industry total</div>
-                </div>
-              </div>
 
-              <div className="text-center py-8">
-                <TrendingUp className="h-16 w-16 text-green-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Traffic Trend Analysis</h3>
-                <p className="text-slate-400">Historical and predictive shipping traffic patterns in Arctic waters.</p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="text-center py-8">
+                  <TrendingUp className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">Traffic Trend Analysis</h3>
+                  <p className="text-slate-400">Historical and predictive shipping traffic patterns in Arctic waters.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-slate-800 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Historical Vessel Traffic</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VesselTrafficChart />
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Route Efficiency Metrics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RouteSavingsChart />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="forecast">
@@ -280,6 +309,71 @@ const ArcticRoutes = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Route Performance Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <h4 className="text-white font-medium mb-2">Best Performing Route</h4>
+                    <div className="text-cyan-400 text-lg font-bold">Northeast Passage</div>
+                    <div className="text-sm text-slate-300">35% cost reduction vs traditional routes</div>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <h4 className="text-white font-medium mb-2">Peak Season</h4>
+                    <div className="text-green-400 text-lg font-bold">July - September</div>
+                    <div className="text-sm text-slate-300">Optimal ice conditions for navigation</div>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg">
+                    <h4 className="text-white font-medium mb-2">Safety Record</h4>
+                    <div className="text-yellow-400 text-lg font-bold">99.2% Success Rate</div>
+                    <div className="text-sm text-slate-300">2024 transit completion rate</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Environmental Impact</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-300">CO₂ Emissions Reduction</span>
+                      <span className="text-green-400">-42%</span>
+                    </div>
+                    <Progress value={42} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-300">Fuel Consumption Savings</span>
+                      <span className="text-green-400">-38%</span>
+                    </div>
+                    <Progress value={38} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-300">Transit Time Reduction</span>
+                      <span className="text-green-400">-35%</span>
+                    </div>
+                    <Progress value={35} className="h-2" />
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg mt-4">
+                    <div className="text-sm text-slate-300">Estimated Annual Savings</div>
+                    <div className="text-2xl font-bold text-green-400">$2.1B</div>
+                    <div className="text-xs text-slate-400">Industry-wide cost reduction</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
