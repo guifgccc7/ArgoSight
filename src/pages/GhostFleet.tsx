@@ -1,10 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Ship, AlertTriangle, Search, Filter, Eye } from "lucide-react";
+import MapboxMap from "@/components/maps/MapboxMap";
 
 const GhostFleet = () => {
   const ghostVessels = [
@@ -65,12 +65,14 @@ const GhostFleet = () => {
                   <CardTitle className="text-white">Dark Vessel Detection Map</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-96 bg-slate-900 rounded-lg flex items-center justify-center border border-slate-600">
-                    <div className="text-center">
-                      <Ship className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">Interactive Tracking Map</h3>
-                      <p className="text-slate-400">Real-time ghost fleet positions and movement patterns</p>
-                    </div>
+                  <div className="h-96">
+                    <MapboxMap 
+                      showVessels={true}
+                      showRoutes={false}
+                      style="mapbox://styles/mapbox/dark-v11"
+                      center={[30, 40]}
+                      zoom={3}
+                    />
                   </div>
                 </CardContent>
               </Card>

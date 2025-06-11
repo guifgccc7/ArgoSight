@@ -1,0 +1,189 @@
+
+export interface VesselData {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  speed: number;
+  heading: number;
+  status: 'active' | 'warning' | 'danger' | 'dark';
+  lastUpdate: string;
+  vesselType: string;
+}
+
+export interface WeatherData {
+  location: string;
+  temperature: number;
+  windSpeed: number;
+  windDirection: number;
+  waveHeight: number;
+  visibility: number;
+}
+
+export interface ThreatAlert {
+  id: string;
+  type: 'ghost_vessel' | 'weather' | 'security' | 'collision';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  location: [number, number];
+  description: string;
+  timestamp: string;
+}
+
+class LiveDataService {
+  private wsConnection: WebSocket | null = null;
+  private subscribers: Set<(data: any) => void> = new Set();
+  private simulationInterval: NodeJS.Timeout | null = null;
+
+  // Simulate live vessel data
+  generateMockVesselData(): VesselData[] {
+    const vessels: VesselData[] = [
+      {
+        id: "IMO-001",
+        name: "MV Atlantic Cargo",
+        lat: 40.7128 + (Math.random() - 0.5) * 0.1,
+        lng: -74.0060 + (Math.random() - 0.5) * 0.1,
+        speed: 12 + Math.random() * 8,
+        heading: Math.random() * 360,
+        status: 'active',
+        lastUpdate: new Date().toISOString(),
+        vesselType: 'cargo'
+      },
+      {
+        id: "IMO-002",
+        name: "Tanker Pacific Star",
+        lat: 35.6762 + (Math.random() - 0.5) * 0.1,
+        lng: 139.6503 + (Math.random() - 0.5) * 0.1,
+        speed: 8 + Math.random() * 6,
+        heading: Math.random() * 360,
+        status: Math.random() > 0.8 ? 'warning' : 'active',
+        lastUpdate: new Date().toISOString(),
+        vesselType: 'tanker'
+      },
+      {
+        id: "UNKNOWN-003",
+        name: "Ghost Vessel",
+        lat: 51.5074 + (Math.random() - 0.5) * 0.2,
+        lng: -0.1278 + (Math.random() - 0.5) * 0.2,
+        speed: 0,
+        heading: 0,
+        status: 'dark',
+        lastUpdate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        vesselType: 'unknown'
+      }
+    ];
+
+    return vessels;
+  }
+
+  // Generate mock weather data
+  generateMockWeatherData(): WeatherData[] {
+    const locations = [
+      { name: "North Atlantic", lat: 50, lng: -30 },
+      { name: "Mediterranean", lat: 35, lng: 15 },
+      { name: "Arctic Ocean", lat: 80, lng: 0 },
+      { name: "South China Sea", lat: 15, lng: 115 }
+    ];
+
+    return locations.map(location => ({
+      location: location.name,
+      temperature: -5 + Math.random() * 35,
+      windSpeed: Math.random() * 50,
+      windDirection: Math.random() * 360,
+      waveHeight: Math.random() * 8,
+      visibility: 1 + Math.random() * 9
+    }));
+  }
+
+  // Generate mock threat alerts
+  generateMockAlerts(): ThreatAlert[] {
+    const alerts: ThreatAlert[] = [];
+    
+    if (Math.random() > 0.7) {
+      alerts.push({
+        id: `alert-${Date.now()}`,
+        type: 'ghost_vessel',
+        severity: 'high',
+        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        description: 'Vessel disappeared from AIS tracking',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (Math.random() > 0.8) {
+      alerts.push({
+        id: `alert-${Date.now() + 1}`,
+        type: 'weather',
+        severity: 'medium',
+        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        description: 'Severe weather conditions detected',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return alerts;
+  }
+
+  // Start live data simulation
+  startLiveDataFeed() {
+    if (this.simulationInterval) return;
+
+    this.simulationInterval = setInterval(() => {
+      const liveData = {
+        vessels: this.generateMockVesselData(),
+        weather: this.generateMockWeatherData(),
+        alerts: this.generateMockAlerts(),
+        timestamp: new Date().toISOString()
+      };
+
+      this.notifySubscribers(liveData);
+    }, 5000); // Update every 5 seconds
+
+    console.log('Live data feed started');
+  }
+
+  // Stop live data simulation
+  stopLiveDataFeed() {
+    if (this.simulationInterval) {
+      clearInterval(this.simulationInterval);
+      this.simulationInterval = null;
+      console.log('Live data feed stopped');
+    }
+  }
+
+  // Subscribe to live data updates
+  subscribe(callback: (data: any) => void) {
+    this.subscribers.add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      this.subscribers.delete(callback);
+    };
+  }
+
+  // Notify all subscribers
+  private notifySubscribers(data: any) {
+    this.subscribers.forEach(callback => callback(data));
+  }
+
+  // Get current satellite coverage
+  getSatelliteCoverage() {
+    return {
+      activeSatellites: 47,
+      coverage: 94.2 + Math.random() * 5,
+      dataQuality: Math.random() > 0.8 ? 'excellent' : 'good',
+      lastUpdate: new Date().toISOString()
+    };
+  }
+
+  // Get real-time AIS data
+  getAISData() {
+    return {
+      trackedVessels: 2847 + Math.floor(Math.random() * 100),
+      darkVessels: 156 + Math.floor(Math.random() * 20),
+      updateRate: 'real-time',
+      lastSync: new Date().toISOString()
+    };
+  }
+}
+
+export const liveDataService = new LiveDataService();

@@ -1,11 +1,34 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, Satellite, Ship, Radar, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { liveDataService } from "@/services/liveDataService";
 
 const DataFusion = () => {
+  const [liveData, setLiveData] = useState<any>(null);
+  const [satelliteData, setSatelliteData] = useState<any>(null);
+  const [aisData, setAISData] = useState<any>(null);
+
+  useEffect(() => {
+    // Start live data and get initial satellite/AIS data
+    liveDataService.startLiveDataFeed();
+    setSatelliteData(liveDataService.getSatelliteCoverage());
+    setAISData(liveDataService.getAISData());
+
+    const unsubscribe = liveDataService.subscribe((data) => {
+      setLiveData(data);
+      setSatelliteData(liveDataService.getSatelliteCoverage());
+      setAISData(liveDataService.getAISData());
+    });
+
+    return () => {
+      unsubscribe();
+      liveDataService.stopLiveDataFeed();
+    };
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -42,15 +65,17 @@ const DataFusion = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-slate-300">Active Satellites</span>
-                    <span className="text-white font-medium">47</span>
+                    <span className="text-white font-medium">{satelliteData?.activeSatellites || 47}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-300">Coverage</span>
-                    <span className="text-green-400 font-medium">98.2%</span>
+                    <span className="text-green-400 font-medium">{satelliteData?.coverage?.toFixed(1) || '98.2'}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-300">Data Quality</span>
-                    <Badge variant="outline" className="text-green-400 border-green-400">EXCELLENT</Badge>
+                    <Badge variant="outline" className="text-green-400 border-green-400">
+                      {satelliteData?.dataQuality?.toUpperCase() || 'EXCELLENT'}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -67,15 +92,17 @@ const DataFusion = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-slate-300">Tracked Vessels</span>
-                    <span className="text-white font-medium">2,847</span>
+                    <span className="text-white font-medium">{aisData?.trackedVessels?.toLocaleString() || '2,847'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-300">Dark Vessels</span>
-                    <span className="text-red-400 font-medium">156</span>
+                    <span className="text-red-400 font-medium">{aisData?.darkVessels || 156}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-300">Update Rate</span>
-                    <Badge variant="outline" className="text-green-400 border-green-400">REAL-TIME</Badge>
+                    <Badge variant="outline" className="text-green-400 border-green-400">
+                      {aisData?.updateRate?.toUpperCase() || 'REAL-TIME'}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -118,7 +145,7 @@ const DataFusion = () => {
                   { source: "Military Radar Network", status: "active", latency: "0.1s", quality: "excellent" },
                   { source: "Commercial AIS Feed", status: "active", latency: "0.5s", quality: "good" },
                   { source: "Satellite Imagery", status: "active", latency: "15min", quality: "high" },
-                  { source: "Intelligence Reports", status: "delayed", latency: "2hr", quality: "medium" },
+                  { source: "Live Vessel Tracking", status: liveData ? "active" : "connecting", latency: "5s", quality: liveData ? "excellent" : "medium" },
                 ].map((stream, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg">
                     <div className="flex items-center space-x-3">
