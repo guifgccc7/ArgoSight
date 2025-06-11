@@ -5,7 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/context/theme-provider";
+import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import DataFusion from "./pages/DataFusion";
 import GhostFleet from "./pages/GhostFleet";
@@ -27,21 +30,28 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="/data-fusion" element={<DataFusion />} />
-              <Route path="/ghost-fleet" element={<GhostFleet />} />
-              <Route path="/satellite-imagery" element={<SatelliteImagery />} />
-              <Route path="/arctic-routes" element={<ArcticRoutes />} />
-              <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
-              <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
-              <Route path="/climate-intel" element={<ClimateIntel />} />
-              <Route path="/intelligence-db" element={<IntelligenceDB />} />
-              <Route path="/integrated-intel" element={<IntegratedIntel />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Index />} />
+                <Route path="/data-fusion" element={<DataFusion />} />
+                <Route path="/ghost-fleet" element={<GhostFleet />} />
+                <Route path="/satellite-imagery" element={<SatelliteImagery />} />
+                <Route path="/arctic-routes" element={<ArcticRoutes />} />
+                <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
+                <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
+                <Route path="/climate-intel" element={<ClimateIntel />} />
+                <Route path="/intelligence-db" element={<IntelligenceDB />} />
+                <Route path="/integrated-intel" element={<IntegratedIntel />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
