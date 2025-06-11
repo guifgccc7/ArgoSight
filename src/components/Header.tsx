@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, Search, User, Settings, Globe } from "lucide-react";
+import { Bell, Search, User, Settings, Ship } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,8 @@ const Header = () => {
     <header className="h-16 bg-slate-900 border-b border-slate-700 px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
-          <Globe className="h-8 w-8 text-cyan-400" />
-          <h1 className="text-xl font-bold text-white">Maritime Intel</h1>
+          <Ship className="h-8 w-8 text-cyan-400" />
+          <h1 className="text-xl font-bold text-white">ArgoSight</h1>
         </div>
         <Badge variant="outline" className="text-cyan-400 border-cyan-400">
           CLASSIFIED
