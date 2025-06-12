@@ -39,7 +39,7 @@ const OrganizationSelector = ({ onSelectOrganization, selectedOrganizationId }: 
 
   const fetchOrganizations = async () => {
     try {
-      // Use rpc call as a workaround since organizations table isn't in types yet
+      // Use RPC call as a workaround since organizations table isn't in types yet
       const { data, error } = await supabase.rpc('get_organizations');
       
       if (error) {
@@ -74,7 +74,7 @@ const OrganizationSelector = ({ onSelectOrganization, selectedOrganizationId }: 
     
     setIsLoading(true);
     try {
-      // Use rpc call as a workaround
+      // Use RPC call as a workaround
       const { data, error } = await supabase.rpc('create_organization', {
         org_name: newOrg.name,
         org_code: newOrg.code,
@@ -95,8 +95,15 @@ const OrganizationSelector = ({ onSelectOrganization, selectedOrganizationId }: 
         setOrganizations([...organizations, tempOrg]);
         onSelectOrganization(tempOrg.id);
       } else {
-        setOrganizations([...organizations, data]);
-        onSelectOrganization(data.id);
+        const newOrgData = data || {
+          id: `temp-${Date.now()}`,
+          name: newOrg.name,
+          code: newOrg.code,
+          type: newOrg.type,
+          country: newOrg.country
+        };
+        setOrganizations([...organizations, newOrgData]);
+        onSelectOrganization(newOrgData.id);
       }
       
       setShowCreateForm(false);
