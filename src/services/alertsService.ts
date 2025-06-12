@@ -32,6 +32,26 @@ export interface AlertsMetrics {
   successRate: string;
 }
 
+export interface ReportData {
+  generated: string;
+  dateRange: {
+    from: Date;
+    to: Date;
+  };
+  filters: {
+    severity: string;
+    type: string;
+    status: string;
+  };
+  summary: {
+    totalAlerts: number;
+    bySeverity: Record<string, number>;
+    byStatus: Record<string, number>;
+    byType: Record<string, number>;
+  };
+  alerts: Alert[];
+}
+
 class AlertsService {
   private alerts: Alert[] = [];
   private subscribers: Set<(alerts: Alert[]) => void> = new Set();
@@ -182,6 +202,94 @@ class AlertsService {
     }
 
     return filtered;
+  }
+
+  generateReport(config: {
+    dateRange: { from: Date; to: Date };
+    severity?: string;
+    type?: string;
+    status?: string;
+  }): ReportData {
+    const filters: any = {};
+    if (config.severity && config.severity !== 'all') filters.severity = config.severity;
+    if (config.type && config.type !== 'all') filters.type = config.type;
+    if (config.status && config.status !== 'all') filters.status = config.status;
+
+    const alerts = this.getAlerts(filters);
+    
+    // Filter by date range
+    const filteredAlerts = alerts.filter(alert => {
+      const alertDate = new Date(alert.timestamp);
+      return alertDate >= config.dateRange.from && alertDate <= config.dateRange.to;
+    });
+
+    // Generate summary statistics
+    const bySeverity: Record<string, number> = {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0
+    };
+
+    const byStatus: Record<string, number> = {
+      new: 0,
+      acknowledged: 0,
+      investigating: 0,
+      escalated: 0,
+      resolved: 0
+    };
+
+    const byType: Record<string, number> = {
+      ghost_vessel: 0,
+      weather: 0,
+      security: 0,
+      collision: 0,
+      communication: 0,
+      equipment: 0
+    };
+
+    filteredAlerts.forEach(alert => {
+      bySeverity[alert.severity]++;
+      byStatus[alert.status]++;
+      byType[alert.type]++;
+    });
+
+    return {
+      generated: new Date().toISOString(),
+      dateRange: config.dateRange,
+      filters: {
+        severity: config.severity || 'all',
+        type: config.type || 'all',
+        status: config.status || 'all'
+      },
+      summary: {
+        totalAlerts: filteredAlerts.length,
+        bySeverity,
+        byStatus,
+        byType
+      },
+      alerts: filteredAlerts
+    };
+  }
+
+  exportDetectionData(): any {
+    const metrics = this.getMetrics();
+    return {
+      exportedAt: new Date().toISOString(),
+      metrics,
+      alerts: this.alerts,
+      summary: {
+        totalAlerts: this.alerts.length,
+        alertsByType: this.alerts.reduce((acc, alert) => {
+          acc[alert.type] = (acc[alert.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        alertsBySeverity: this.alerts.reduce((acc, alert) => {
+          acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      }
+    };
   }
 
   getMetrics(): AlertsMetrics {
