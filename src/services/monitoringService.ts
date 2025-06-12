@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SystemMetric {
@@ -18,6 +19,15 @@ export interface PerformanceMetrics {
   cpuUsage: number;
   diskUsage: number;
   activeConnections: number;
+}
+
+interface SystemHealthData {
+  vessels_count: number;
+  positions_last_24h: number;
+  weather_records_last_24h: number;
+  satellite_images_last_7d: number;
+  api_errors_last_hour: number;
+  last_check: string;
 }
 
 class MonitoringService {
@@ -55,9 +65,11 @@ class MonitoringService {
       const { data: healthData } = await supabase.rpc('get_system_health');
       
       if (healthData) {
+        const health = healthData as SystemHealthData;
+        
         await this.recordMetric({
           name: 'vessels_count',
-          value: healthData.vessels_count || 0,
+          value: health.vessels_count || 0,
           unit: 'count',
           component: 'database',
           timestamp,
@@ -66,22 +78,22 @@ class MonitoringService {
 
         await this.recordMetric({
           name: 'positions_last_24h',
-          value: healthData.positions_last_24h || 0,
+          value: health.positions_last_24h || 0,
           unit: 'count',
           component: 'data_ingestion',
           timestamp,
           threshold: 1000,
-          status: healthData.positions_last_24h > 1000 ? 'normal' : 'warning'
+          status: health.positions_last_24h > 1000 ? 'normal' : 'warning'
         });
 
         await this.recordMetric({
           name: 'api_errors_last_hour',
-          value: healthData.api_errors_last_hour || 0,
+          value: health.api_errors_last_hour || 0,
           unit: 'count',
           component: 'api',
           timestamp,
           threshold: 10,
-          status: healthData.api_errors_last_hour > 10 ? 'critical' : 'normal'
+          status: health.api_errors_last_hour > 10 ? 'critical' : 'normal'
         });
       }
 

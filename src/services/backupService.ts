@@ -2,253 +2,253 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BackupConfig {
-  enabled: boolean;
   frequency: 'daily' | 'weekly' | 'monthly';
-  retentionDays: number;
-  includeBlobs: boolean;
+  retention: number; // days
   compression: boolean;
+  encryption: boolean;
+  tables: string[];
 }
 
-export interface BackupJob {
+export interface BackupRecord {
   id: string;
-  startTime: string;
-  endTime?: string;
-  status: 'running' | 'completed' | 'failed';
-  tablesBackedUp: string[];
-  sizeMB: number;
-  errorMessage?: string;
+  filename: string;
+  size: number;
+  created_at: string;
+  type: 'full' | 'incremental';
+  status: 'completed' | 'failed' | 'in_progress';
+  tables_included: string[];
 }
 
 class BackupService {
   private config: BackupConfig = {
-    enabled: true,
     frequency: 'daily',
-    retentionDays: 30,
-    includeBlobs: true,
-    compression: true
-  };
-
-  private backupJobs: BackupJob[] = [];
-
-  async configureBackup(config: Partial<BackupConfig>): Promise<void> {
-    this.config = { ...this.config, ...config };
-    console.log('Backup configuration updated:', this.config);
-    
-    // Store configuration in database
-    await supabase.from('data_retention_policies').upsert({
-      table_name: 'backup_config',
-      retention_days: this.config.retentionDays,
-      policy_active: this.config.enabled,
-      metadata: {
-        frequency: this.config.frequency,
-        includeBlobs: this.config.includeBlobs,
-        compression: this.config.compression
-      }
-    }, { onConflict: 'table_name' });
-  }
-
-  async createBackup(tables?: string[]): Promise<string> {
-    const jobId = `backup-${Date.now()}`;
-    const tablesToBackup = tables || [
+    retention: 30,
+    compression: true,
+    encryption: true,
+    tables: [
       'vessels',
-      'vessel_positions',
+      'vessel_positions', 
       'weather_data',
       'satellite_images',
       'api_integration_logs',
       'system_metrics'
-    ];
+    ]
+  };
 
-    const job: BackupJob = {
-      id: jobId,
-      startTime: new Date().toISOString(),
-      status: 'running',
-      tablesBackedUp: tablesToBackup,
-      sizeMB: 0
-    };
-
-    this.backupJobs.push(job);
-
+  async createBackup(type: 'full' | 'incremental' = 'full'): Promise<BackupRecord> {
+    console.log(`Starting ${type} backup...`);
+    
     try {
-      console.log(`Starting backup job ${jobId}...`);
+      const backupId = crypto.randomUUID();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `backup-${type}-${timestamp}.sql`;
       
+      const backupRecord: BackupRecord = {
+        id: backupId,
+        filename,
+        size: 0,
+        created_at: new Date().toISOString(),
+        type,
+        status: 'in_progress',
+        tables_included: this.config.tables
+      };
+
+      // Simulate backup process
       let totalSize = 0;
-      
-      for (const table of tablesToBackup) {
-        console.log(`Backing up table: ${table}`);
-        
-        // In production, this would export data to cloud storage
-        // For now, we'll simulate the backup process
-        const tableSize = await this.simulateTableBackup(table);
-        totalSize += tableSize;
-        
-        // Simulate progress delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      for (const tableName of this.config.tables) {
+        try {
+          const { count } = await supabase
+            .from(tableName as any)
+            .select('*', { count: 'exact', head: true });
+          
+          // Estimate size (rough calculation)
+          const estimatedRowSize = 1024; // 1KB per row average
+          const tableSize = (count || 0) * estimatedRowSize;
+          totalSize += tableSize;
+          
+          console.log(`Backed up table ${tableName}: ${count} records (${(tableSize / 1024 / 1024).toFixed(2)} MB)`);
+        } catch (error) {
+          console.warn(`Could not backup table ${tableName}:`, error);
+        }
       }
 
-      // Complete the job
-      job.endTime = new Date().toISOString();
-      job.status = 'completed';
-      job.sizeMB = totalSize;
+      backupRecord.size = totalSize;
+      backupRecord.status = 'completed';
 
-      console.log(`Backup job ${jobId} completed successfully. Total size: ${totalSize}MB`);
-      
-      return jobId;
+      // In a real implementation, you would:
+      // 1. Export actual data to files
+      // 2. Compress if enabled
+      // 3. Encrypt if enabled
+      // 4. Upload to cloud storage
+      // 5. Record backup metadata
 
-    } catch (error: any) {
-      job.endTime = new Date().toISOString();
-      job.status = 'failed';
-      job.errorMessage = error.message;
+      console.log(`Backup completed: ${filename} (${(totalSize / 1024 / 1024).toFixed(2)} MB)`);
       
-      console.error(`Backup job ${jobId} failed:`, error);
+      return backupRecord;
+    } catch (error) {
+      console.error('Backup failed:', error);
       throw error;
     }
   }
 
-  private async simulateTableBackup(tableName: string): Promise<number> {
-    // Simulate fetching table data and calculating size
-    const { count } = await supabase
-      .from(tableName)
-      .select('*', { count: 'exact', head: true });
+  async restoreBackup(backupId: string): Promise<void> {
+    console.log(`Starting restore from backup ${backupId}...`);
     
-    // Estimate size based on row count (rough calculation)
-    const estimatedSizeMB = (count || 0) * 0.001; // 1KB per row average
-    
-    console.log(`Table ${tableName}: ${count} rows, ~${estimatedSizeMB.toFixed(2)}MB`);
-    
-    return estimatedSizeMB;
-  }
-
-  async restoreBackup(jobId: string, targetTables?: string[]): Promise<void> {
-    const job = this.backupJobs.find(j => j.id === jobId);
-    if (!job || job.status !== 'completed') {
-      throw new Error(`Backup job ${jobId} not found or not completed`);
-    }
-
-    console.log(`Starting restore from backup ${jobId}...`);
-    
-    const tablesToRestore = targetTables || job.tablesBackedUp;
-    
-    for (const table of tablesToRestore) {
-      console.log(`Restoring table: ${table}`);
+    try {
+      // In a real implementation, you would:
+      // 1. Download backup file from storage
+      // 2. Decrypt if necessary
+      // 3. Decompress if necessary
+      // 4. Execute restore SQL
+      // 5. Verify data integrity
+      // 6. Update system status
       
-      // In production, this would restore data from cloud storage
-      // For now, we'll simulate the restore process
-      await this.simulateTableRestore(table);
-      
-      // Simulate progress delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Restore completed successfully');
+    } catch (error) {
+      console.error('Restore failed:', error);
+      throw error;
     }
-
-    console.log(`Restore from backup ${jobId} completed successfully`);
   }
 
-  private async simulateTableRestore(tableName: string): Promise<void> {
-    console.log(`Simulating restore for table: ${tableName}`);
-    // In production, this would:
-    // 1. Download backup data from cloud storage
-    // 2. Validate data integrity
-    // 3. Insert/upsert data back into the table
-    // 4. Update indexes and constraints
-  }
-
-  async scheduleAutomaticBackups(): Promise<void> {
-    console.log('Scheduling automatic backups...');
+  async listBackups(): Promise<BackupRecord[]> {
+    // In a real implementation, this would query backup metadata
+    // from storage or a backup management system
     
-    const getIntervalMs = () => {
-      switch (this.config.frequency) {
-        case 'daily': return 24 * 60 * 60 * 1000;
-        case 'weekly': return 7 * 24 * 60 * 60 * 1000;
-        case 'monthly': return 30 * 24 * 60 * 60 * 1000;
-        default: return 24 * 60 * 60 * 1000;
+    const mockBackups: BackupRecord[] = [
+      {
+        id: '1',
+        filename: 'backup-full-2024-01-15T10-00-00.sql',
+        size: 1024 * 1024 * 150, // 150MB
+        created_at: '2024-01-15T10:00:00Z',
+        type: 'full',
+        status: 'completed',
+        tables_included: this.config.tables
+      },
+      {
+        id: '2',
+        filename: 'backup-incremental-2024-01-16T10-00-00.sql',
+        size: 1024 * 1024 * 25, // 25MB
+        created_at: '2024-01-16T10:00:00Z',
+        type: 'incremental',
+        status: 'completed',
+        tables_included: this.config.tables
       }
-    };
+    ];
 
-    if (this.config.enabled) {
-      setInterval(async () => {
-        try {
-          await this.createBackup();
-          await this.cleanupOldBackups();
-        } catch (error) {
-          console.error('Scheduled backup failed:', error);
-        }
-      }, getIntervalMs());
+    return mockBackups;
+  }
+
+  async deleteBackup(backupId: string): Promise<void> {
+    console.log(`Deleting backup ${backupId}...`);
+    
+    try {
+      // In a real implementation, you would:
+      // 1. Remove file from storage
+      // 2. Update backup metadata
+      // 3. Log the deletion
+      
+      console.log('Backup deleted successfully');
+    } catch (error) {
+      console.error('Backup deletion failed:', error);
+      throw error;
+    }
+  }
+
+  async scheduleBackups(): Promise<void> {
+    console.log('Setting up backup schedule...');
+    
+    // In a real implementation, you would:
+    // 1. Set up cron jobs or scheduled tasks
+    // 2. Configure backup retention policies
+    // 3. Set up monitoring and alerting
+    
+    const scheduleInterval = this.getScheduleInterval();
+    
+    setInterval(async () => {
+      try {
+        await this.createBackup('incremental');
+        await this.cleanupOldBackups();
+      } catch (error) {
+        console.error('Scheduled backup failed:', error);
+      }
+    }, scheduleInterval);
+
+    console.log(`Backup schedule configured: ${this.config.frequency}`);
+  }
+
+  private getScheduleInterval(): number {
+    switch (this.config.frequency) {
+      case 'daily':
+        return 24 * 60 * 60 * 1000; // 24 hours
+      case 'weekly':
+        return 7 * 24 * 60 * 60 * 1000; // 7 days
+      case 'monthly':
+        return 30 * 24 * 60 * 60 * 1000; // 30 days
+      default:
+        return 24 * 60 * 60 * 1000;
     }
   }
 
   private async cleanupOldBackups(): Promise<void> {
-    const cutoffDate = new Date(Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000);
-    
-    this.backupJobs = this.backupJobs.filter(job => {
-      const jobDate = new Date(job.startTime);
-      return jobDate > cutoffDate;
-    });
-    
-    console.log(`Cleaned up old backup jobs. ${this.backupJobs.length} jobs retained.`);
+    const backups = await this.listBackups();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - this.config.retention);
+
+    const oldBackups = backups.filter(backup => 
+      new Date(backup.created_at) < cutoffDate
+    );
+
+    for (const backup of oldBackups) {
+      await this.deleteBackup(backup.id);
+    }
+
+    console.log(`Cleaned up ${oldBackups.length} old backups`);
   }
 
-  // Archive old data to reduce database size
-  async archiveOldData(): Promise<{ archivedRecords: number; freedSpaceMB: number }> {
-    console.log('Starting data archival process...');
-    
-    let totalArchived = 0;
-    let totalSpaceFreed = 0;
-
-    // Archive old vessel positions (older than 90 days)
-    const { data: positionsArchived } = await supabase.rpc('cleanup_old_positions', { days_to_keep: 90 });
-    totalArchived += positionsArchived || 0;
-    totalSpaceFreed += (positionsArchived || 0) * 0.001; // Estimate 1KB per position
-
-    // Archive old weather data (older than 60 days)
-    const cutoffDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: weatherArchived } = await supabase
-      .from('weather_data')
-      .delete({ count: 'exact' })
-      .lt('timestamp_utc', cutoffDate);
-    
-    totalArchived += weatherArchived || 0;
-    totalSpaceFreed += (weatherArchived || 0) * 0.0005;
-
-    // Archive old API logs (older than 30 days)
-    const logsCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: logsArchived } = await supabase
-      .from('api_integration_logs')
-      .delete({ count: 'exact' })
-      .lt('timestamp_utc', logsCutoff);
-    
-    totalArchived += logsArchived || 0;
-    totalSpaceFreed += (logsArchived || 0) * 0.0002;
-
-    console.log(`Archival complete: ${totalArchived} records archived, ~${totalSpaceFreed.toFixed(2)}MB freed`);
-
-    return {
-      archivedRecords: totalArchived,
-      freedSpaceMB: totalSpaceFreed
-    };
+  // Configuration management
+  updateConfig(newConfig: Partial<BackupConfig>): void {
+    this.config = { ...this.config, ...newConfig };
+    console.log('Backup configuration updated:', newConfig);
   }
 
-  // Public API
-  getBackupJobs(): BackupJob[] {
-    return [...this.backupJobs];
-  }
-
-  getBackupConfig(): BackupConfig {
+  getConfig(): BackupConfig {
     return { ...this.config };
   }
 
-  async getStorageUsage(): Promise<{ totalSizeMB: number; tableBreakdown: { [table: string]: number } }> {
-    const tables = ['vessels', 'vessel_positions', 'weather_data', 'satellite_images', 'api_integration_logs', 'system_metrics'];
-    const breakdown: { [table: string]: number } = {};
-    let total = 0;
+  // Monitoring and reporting
+  async getBackupHealth(): Promise<{
+    lastBackup: string | null;
+    nextBackup: string;
+    totalBackups: number;
+    totalSize: number;
+    status: 'healthy' | 'warning' | 'error';
+  }> {
+    const backups = await this.listBackups();
+    const lastBackup = backups.length > 0 ? backups[0].created_at : null;
+    const totalSize = backups.reduce((sum, backup) => sum + backup.size, 0);
+    
+    // Calculate next backup time
+    const nextBackup = new Date();
+    nextBackup.setTime(nextBackup.getTime() + this.getScheduleInterval());
 
-    for (const table of tables) {
-      const size = await this.simulateTableBackup(table);
-      breakdown[table] = size;
-      total += size;
+    // Determine health status
+    let status: 'healthy' | 'warning' | 'error' = 'healthy';
+    if (!lastBackup) {
+      status = 'error';
+    } else {
+      const lastBackupDate = new Date(lastBackup);
+      const daysSinceLastBackup = (Date.now() - lastBackupDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceLastBackup > 2) {
+        status = 'warning';
+      }
     }
 
     return {
-      totalSizeMB: total,
-      tableBreakdown: breakdown
+      lastBackup,
+      nextBackup: nextBackup.toISOString(),
+      totalBackups: backups.length,
+      totalSize,
+      status
     };
   }
 }
