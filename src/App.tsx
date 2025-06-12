@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import DataFusion from "./pages/DataFusion";
 import GhostFleet from "./pages/GhostFleet";
+import Alerts from "./pages/Alerts";
 import SatelliteImagery from "./pages/SatelliteImagery";
 import ArcticRoutes from "./pages/ArcticRoutes";
 import ArcticCostSavings from "./pages/ArcticCostSavings";

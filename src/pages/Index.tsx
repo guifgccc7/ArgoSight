@@ -8,11 +8,13 @@ import MapboxMap from "@/components/maps/MapboxMap";
 import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
 import { Ship, Satellite, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { liveDataService } from "@/services/liveDataService";
+import { alertsService, Alert } from "@/services/alertsService";
 
 const Index = () => {
   const [liveData, setLiveData] = useState<any>(null);
   const [isLiveDataActive, setIsLiveDataActive] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState<string>('');
+  const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
     // Start live data feed
@@ -25,17 +27,46 @@ const Index = () => {
       console.log('Dashboard live data update:', data);
     });
 
+    // Subscribe to alerts
+    const unsubscribeAlerts = alertsService.subscribe((alerts) => {
+      setRecentAlerts(alerts.slice(0, 5)); // Show only 5 most recent
+    });
+
+    // Start alerts simulation
+    alertsService.startAlertSimulation();
+
     // Cleanup
     return () => {
       unsubscribe();
+      unsubscribeAlerts();
       liveDataService.stopLiveDataFeed();
       setIsLiveDataActive(false);
     };
   }, []);
 
   const vesselCount = liveData?.vessels?.length || 2847;
-  const alertCount = liveData?.alerts?.length || 23;
+  const alertCount = recentAlerts.filter(a => a.status === 'new').length;
   const satelliteCoverage = liveDataService.getSatelliteCoverage().coverage;
+
+  const getTimeAgo = (timestamp: string) => {
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-400';
+      case 'high': return 'bg-orange-400';
+      case 'medium': return 'bg-yellow-400';
+      case 'low': return 'bg-green-400';
+      default: return 'bg-slate-400';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -84,7 +115,7 @@ const Index = () => {
 
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-300">Threat Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-300">Active Alerts</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-400" />
           </CardHeader>
           <CardContent>
@@ -149,42 +180,41 @@ const Index = () => {
       {/* Climate Security Panel */}
       <ClimateSecurityPanel />
 
-      {/* Live Data Activity Feed */}
+      {/* Enhanced Real-Time Alerts Activity Feed */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Live Intelligence Activity</CardTitle>
+          <CardTitle className="text-white flex items-center justify-between">
+            <span>Live Intelligence Activity</span>
+            <Badge variant="outline" className="text-green-400 border-green-400">
+              REAL-TIME ALERTS
+            </Badge>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {liveData?.alerts?.map((alert: any, index: number) => (
-              <div key={alert.id || index} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-b-0">
+            {recentAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-b-0">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    alert.severity === 'critical' ? 'bg-red-400' :
-                    alert.severity === 'high' ? 'bg-orange-400' :
-                    alert.severity === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                  }`} />
-                  <span className="text-slate-300">{alert.description}</span>
+                  <div className={`w-2 h-2 rounded-full ${getSeverityColor(alert.severity)}`} />
+                  <div>
+                    <span className="text-slate-300">{alert.title}</span>
+                    <p className="text-xs text-slate-500">{alert.description}</p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-500">Just now</span>
-              </div>
-            )) || [
-              { time: "2 min ago", event: "Ghost fleet detected in North Pacific", severity: "high" },
-              { time: "15 min ago", event: "Arctic route optimization completed", severity: "medium" },
-              { time: "1 hour ago", event: "Satellite imagery updated for Mediterranean", severity: "low" },
-              { time: "3 hours ago", event: "Climate risk assessment updated", severity: "medium" },
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-b-0">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.severity === 'high' ? 'bg-red-400' :
-                    activity.severity === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                  }`} />
-                  <span className="text-slate-300">{activity.event}</span>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-cyan-400 border-cyan-400 text-xs">
+                    {alert.status.toUpperCase()}
+                  </Badge>
+                  <span className="text-xs text-slate-500">{getTimeAgo(alert.timestamp)}</span>
                 </div>
-                <span className="text-xs text-slate-500">{activity.time}</span>
               </div>
             ))}
+            {recentAlerts.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No recent alerts</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
