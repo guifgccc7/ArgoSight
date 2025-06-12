@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +16,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName?: string) => Promise<void>;
+  signup: (email: string, password: string, fullName?: string, role?: string, organizationId?: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -177,7 +176,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signup = async (email: string, password: string, fullName?: string) => {
+  const signup = async (email: string, password: string, fullName?: string, role?: string, organizationId?: string) => {
     setIsLoading(true);
     setError(null);
     
@@ -191,6 +190,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
+            role: role || 'analyst',
+            organization_id: organizationId,
           },
         },
       });

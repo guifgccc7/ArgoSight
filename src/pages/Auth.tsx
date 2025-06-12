@@ -1,24 +1,28 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, Eye, EyeOff } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import OrganizationSelector from "@/components/auth/OrganizationSelector";
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState('analyst');
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOrgSelector, setShowOrgSelector] = useState(false);
   
   const { login, signup, isAuthenticated, isLoading, error, clearError } = useAuth();
   const navigate = useNavigate();
@@ -53,17 +57,25 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedOrganizationId) {
+      setShowOrgSelector(true);
+      return;
+    }
+    
     setLocalError('');
     setMessage('');
     clearError();
     setIsSubmitting(true);
     
     try {
-      await signup(email, password, fullName);
+      await signup(email, password, fullName, role, selectedOrganizationId);
       setMessage('Check your email for the confirmation link!');
       setEmail('');
       setPassword('');
       setFullName('');
+      setRole('analyst');
+      setSelectedOrganizationId('');
     } catch (err: any) {
       setLocalError(err.message);
     } finally {
@@ -91,161 +103,193 @@ const Auth = () => {
           <p className="text-slate-400 mt-2">Maritime Intelligence Platform</p>
         </div>
 
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white text-center">Access Control</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-900">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login" className="space-y-4">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-300">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-slate-900 border-slate-600 text-white"
-                      placeholder="analyst@argosight.com"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-slate-300">Password</Label>
-                    <div className="relative">
+        {showOrgSelector ? (
+          <OrganizationSelector 
+            onSelectOrganization={(orgId) => {
+              setSelectedOrganizationId(orgId);
+              setShowOrgSelector(false);
+            }}
+            selectedOrganizationId={selectedOrganizationId}
+          />
+        ) : (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white text-center">Access Control</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="login" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-900">
+                  <TabsTrigger value="login">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="login" className="space-y-4">
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-slate-300">Email</Label>
                       <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="bg-slate-900 border-slate-600 text-white pr-10"
-                        placeholder="••••••••"
+                        className="bg-slate-900 border-slate-600 text-white"
+                        placeholder="analyst@argosight.com"
                         disabled={isSubmitting}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                        disabled={isSubmitting}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
                     </div>
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-cyan-600 hover:bg-cyan-700"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center space-x-2">
-                        <LoadingSpinner size="sm" />
-                        <span>Signing In...</span>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-slate-300">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="bg-slate-900 border-slate-600 text-white pr-10"
+                          placeholder="••••••••"
+                          disabled={isSubmitting}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={isSubmitting}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
                       </div>
-                    ) : 'Sign In'}
-                  </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-slate-300">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="bg-slate-900 border-slate-600 text-white"
-                      placeholder="Intelligence Officer"
+                    </div>
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-cyan-600 hover:bg-cyan-700"
                       disabled={isSubmitting}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signupEmail" className="text-slate-300">Email</Label>
-                    <Input
-                      id="signupEmail"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-slate-900 border-slate-600 text-white"
-                      placeholder="analyst@argosight.com"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signupPassword" className="text-slate-300">Password</Label>
-                    <div className="relative">
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center space-x-2">
+                          <LoadingSpinner size="sm" />
+                          <span>Signing In...</span>
+                        </div>
+                      ) : 'Sign In'}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="signup" className="space-y-4">
+                  <form onSubmit={handleSignup} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="text-slate-300">Full Name</Label>
                       <Input
-                        id="signupPassword"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="bg-slate-900 border-slate-600 text-white pr-10"
-                        placeholder="••••••••"
-                        minLength={6}
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="bg-slate-900 border-slate-600 text-white"
+                        placeholder="Intelligence Officer"
                         disabled={isSubmitting}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                        disabled={isSubmitting}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
                     </div>
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center space-x-2">
-                        <LoadingSpinner size="sm" />
-                        <span>Creating Account...</span>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signupEmail" className="text-slate-300">Email</Label>
+                      <Input
+                        id="signupEmail"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="bg-slate-900 border-slate-600 text-white"
+                        placeholder="analyst@argosight.com"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="role" className="text-slate-300">Role</Label>
+                      <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          <SelectItem value="analyst" className="text-white">Intelligence Analyst</SelectItem>
+                          <SelectItem value="operator" className="text-white">Operations Officer</SelectItem>
+                          <SelectItem value="admin" className="text-white">System Administrator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signupPassword" className="text-slate-300">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="signupPassword"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="bg-slate-900 border-slate-600 text-white pr-10"
+                          placeholder="••••••••"
+                          minLength={6}
+                          disabled={isSubmitting}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={isSubmitting}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
                       </div>
-                    ) : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-            
-            {(localError || error) && (
-              <Alert className="mt-4 border-red-500 bg-red-500/10">
-                <AlertDescription className="text-red-400">
-                  {localError || error}
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {message && (
-              <Alert className="mt-4 border-green-500 bg-green-500/10">
-                <AlertDescription className="text-green-400">{message}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+                    </div>
+                    
+                    {selectedOrganizationId && (
+                      <div className="p-3 bg-slate-700 rounded-lg">
+                        <p className="text-sm text-slate-300">
+                          Organization selected. Ready to create account.
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Button
+                      type="submit"
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center space-x-2">
+                          <LoadingSpinner size="sm" />
+                          <span>Creating Account...</span>
+                        </div>
+                      ) : selectedOrganizationId ? 'Create Account' : 'Select Organization'}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+              
+              {(localError || error) && (
+                <Alert className="mt-4 border-red-500 bg-red-500/10">
+                  <AlertDescription className="text-red-400">
+                    {localError || error}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {message && (
+                <Alert className="mt-4 border-green-500 bg-green-500/10">
+                  <AlertDescription className="text-green-400">{message}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )}
         
         <div className="text-center text-sm text-slate-400">
           <p>Classified System • Authorized Personnel Only</p>
