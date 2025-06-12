@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -29,6 +30,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   const vesselMarkers = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const alertMarkers = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const [liveData, setLiveData] = useState<any>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -54,6 +56,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       if (showRoutes) {
         addMaritimeRoutes();
       }
+      setIsInitialized(true);
     });
 
     // Subscribe to live data updates
@@ -72,16 +75,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     };
   }, [style, center, zoom, showRoutes]);
 
-  // Update vessels when live data changes
+  // Update markers only when live data changes and map is initialized
   useEffect(() => {
-    if (!map.current || !liveData || !showVessels) return;
+    if (!map.current || !liveData || !isInitialized) return;
 
-    updateVesselMarkers(liveData.vessels || []);
+    if (showVessels) {
+      updateVesselMarkers(liveData.vessels || []);
+    }
     
     if (showAlerts) {
       updateAlertMarkers(liveData.alerts || []);
     }
-  }, [liveData, showVessels, showAlerts, focusMode]);
+  }, [liveData, showVessels, showAlerts, focusMode, isInitialized]);
 
   const updateVesselMarkers = (vessels: VesselData[]) => {
     // Filter vessels based on focus mode
@@ -111,8 +116,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       const existingMarker = vesselMarkers.current[vessel.id];
       
       if (existingMarker) {
-        // Update existing marker position
+        // Update existing marker position smoothly
         existingMarker.setLngLat([vessel.lng, vessel.lat]);
+        updateVesselMarkerElement(existingMarker.getElement(), vessel);
         updateVesselPopup(existingMarker, vessel);
       } else {
         // Create new marker
@@ -152,6 +158,24 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         alertMarkers.current[alert.id] = marker;
       }
     });
+  };
+
+  const updateVesselMarkerElement = (element: HTMLElement, vessel: VesselData) => {
+    // Update the existing marker element's style based on vessel status
+    switch (vessel.status) {
+      case 'active':
+        element.style.backgroundColor = '#10b981';
+        break;
+      case 'warning':
+        element.style.backgroundColor = '#f59e0b';
+        break;
+      case 'danger':
+        element.style.backgroundColor = '#ef4444';
+        break;
+      case 'dark':
+        element.style.backgroundColor = '#6b7280';
+        break;
+    }
   };
 
   const createVesselMarkerElement = (vessel: VesselData) => {
