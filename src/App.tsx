@@ -20,6 +20,7 @@ import MediterraneanRoutes from "./pages/MediterraneanRoutes";
 import ClimateIntel from "./pages/ClimateIntel";
 import IntelligenceDB from "./pages/IntelligenceDB";
 import IntegratedIntel from "./pages/IntegratedIntel";
+import RealTimeOperations from "./pages/RealTimeOperations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -58,6 +59,7 @@ const App = () => {
                   <Route path="/climate-intel" element={<ClimateIntel />} />
                   <Route path="/intelligence-db" element={<IntelligenceDB />} />
                   <Route path="/integrated-intel" element={<IntegratedIntel />} />
+                  <Route path="/real-time-operations" element={<RealTimeOperations />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

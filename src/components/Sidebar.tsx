@@ -12,11 +12,13 @@ import {
   CloudSnow,
   Search,
   Brain,
-  AlertTriangle
+  AlertTriangle,
+  Activity
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Real-Time Ops", href: "/real-time-operations", icon: Activity },
   { name: "Data Fusion", href: "/data-fusion", icon: Database },
   { name: "Ghost Fleet", href: "/ghost-fleet", icon: Ship },
   { name: "Alerts", href: "/alerts", icon: AlertTriangle },

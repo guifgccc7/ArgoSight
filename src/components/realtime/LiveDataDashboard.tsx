@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { realTimeDataProcessor, DataSource, ProcessingMetrics } from '@/services/realTimeDataProcessor';
 import { intelligentAlertingSystem, AlertCorrelation } from '@/services/intelligentAlertingSystem';
+import SystemHealthMonitor from '@/components/SystemHealthMonitor';
 
 const LiveDataDashboard: React.FC = () => {
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
@@ -31,15 +31,12 @@ const LiveDataDashboard: React.FC = () => {
   const [isLiveMode, setIsLiveMode] = useState(false);
 
   useEffect(() => {
-    // Initialize data sources
     setDataSources(realTimeDataProcessor.getDataSources());
 
-    // Subscribe to metrics updates
     const unsubscribeMetrics = realTimeDataProcessor.subscribeToMetrics((newMetrics) => {
       setMetrics(newMetrics);
     });
 
-    // Subscribe to correlations
     const unsubscribeCorrelations = intelligentAlertingSystem.subscribe((correlation) => {
       setCorrelations(prev => [correlation, ...prev.slice(0, 9)]);
     });
@@ -164,7 +161,7 @@ const LiveDataDashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Data Sources Status */}
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader>
@@ -247,6 +244,9 @@ const LiveDataDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* System Health Monitor */}
+        <SystemHealthMonitor />
       </div>
     </div>
   );

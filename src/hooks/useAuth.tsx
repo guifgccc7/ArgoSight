@@ -21,6 +21,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,11 +39,28 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Auth state cleanup utility
+const cleanupAuthState = () => {
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
+
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const clearError = () => setError(null);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -64,7 +83,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -75,7 +93,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to avoid calling Supabase functions inside the callback
           setTimeout(() => {
             if (mounted) {
               fetchProfile(session.user.id);
@@ -86,16 +103,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         setIsLoading(false);
+        setError(null);
       }
     );
 
-    // Check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
+          setError('Failed to initialize authentication');
           setIsLoading(false);
           return;
         }
@@ -112,6 +130,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (mounted) {
+          setError('Authentication initialization failed');
           setIsLoading(false);
         }
       }
@@ -127,7 +146,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
+      cleanupAuthState();
+      
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -136,11 +165,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) throw error;
       
       if (data.user) {
-        // Navigation will be handled by the auth state change listener
         console.log('Login successful');
+        window.location.href = '/';
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      setError(error.message || 'Authentication failed');
       throw new Error(error.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
@@ -149,6 +179,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signup = async (email: string, password: string, fullName?: string) => {
     setIsLoading(true);
+    setError(null);
+    
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -168,6 +200,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('Signup successful:', data.user?.id);
     } catch (error: any) {
       console.error('Signup error:', error);
+      setError(error.message || 'Signup failed');
       throw new Error(error.message || 'Signup failed');
     } finally {
       setIsLoading(false);
@@ -175,18 +208,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = async () => {
+    setIsLoading(true);
+    
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      cleanupAuthState();
+      
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.error('Error signing out:', err);
+      }
       
       setUser(null);
       setProfile(null);
       setSession(null);
+      setError(null);
       
-      // Force redirect to auth page
       window.location.href = '/auth';
     } catch (error) {
       console.error('Error signing out:', error);
+      setError('Logout failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -198,7 +241,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signup,
     logout,
     isLoading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    error,
+    clearError
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
