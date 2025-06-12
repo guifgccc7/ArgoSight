@@ -1,6 +1,4 @@
 
-import { pipeline, Pipeline } from '@huggingface/transformers';
-
 export interface MLAnalysisResult {
   anomalyScore: number;
   classification: string;
@@ -20,7 +18,7 @@ export interface VesselDataPoint {
 }
 
 class MLAnalysisService {
-  private textClassifier: Pipeline | null = null;
+  private textClassifier: any = null; // Changed from Pipeline to any to avoid type conflicts
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
 
@@ -35,6 +33,9 @@ class MLAnalysisService {
   private async loadModels() {
     try {
       console.log('Loading ML models...');
+      
+      // Dynamically import the pipeline function to avoid type issues
+      const { pipeline } = await import('@huggingface/transformers');
       
       // Load a lightweight text classification model for analyzing vessel descriptions/communications
       this.textClassifier = await pipeline(
