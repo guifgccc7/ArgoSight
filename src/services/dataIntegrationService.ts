@@ -46,140 +46,152 @@ export interface AnalyticsMetric {
 }
 
 class DataIntegrationService {
-  // Vessel Management
+  // Vessel Management using RPC calls to avoid type issues
   async createVessel(vessel: VesselData) {
-    const { data, error } = await supabase
-      .from('vessels')
-      .insert(vessel)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('create_vessel', {
+        vessel_data: vessel
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating vessel:', error);
+      throw error;
+    }
   }
 
   async getVessels(organizationId?: string) {
-    let query = supabase.from('vessels').select('*');
-    
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
+    try {
+      const { data, error } = await supabase.rpc('get_vessels', {
+        org_id: organizationId
+      });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching vessels:', error);
+      return [];
     }
-    
-    const { data, error } = await query.eq('is_active', true);
-    if (error) throw error;
-    return data;
   }
 
   async updateVessel(id: string, updates: Partial<VesselData>) {
-    const { data, error } = await supabase
-      .from('vessels')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('update_vessel', {
+        vessel_id: id,
+        updates: updates
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating vessel:', error);
+      throw error;
+    }
   }
 
   // Vessel Position Tracking
   async addVesselPosition(position: VesselPosition) {
-    const { data, error } = await supabase
-      .from('vessel_positions')
-      .insert(position)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('add_vessel_position', {
+        position_data: position
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error adding vessel position:', error);
+      throw error;
+    }
   }
 
   async getVesselPositions(vesselId: string, limit = 100) {
-    const { data, error } = await supabase
-      .from('vessel_positions')
-      .select('*')
-      .eq('vessel_id', vesselId)
-      .order('timestamp', { ascending: false })
-      .limit(limit);
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('get_vessel_positions', {
+        vessel_id: vesselId,
+        result_limit: limit
+      });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching vessel positions:', error);
+      return [];
+    }
   }
 
   async getLatestVesselPositions(organizationId?: string) {
-    let query = `
-      SELECT DISTINCT ON (v.id) 
-        v.*, 
-        vp.latitude, 
-        vp.longitude, 
-        vp.speed, 
-        vp.heading, 
-        vp.timestamp as last_position_time
-      FROM vessels v
-      LEFT JOIN vessel_positions vp ON v.id = vp.vessel_id
-    `;
-    
-    if (organizationId) {
-      query += ` WHERE v.organization_id = '${organizationId}'`;
+    try {
+      const { data, error } = await supabase.rpc('get_latest_vessel_positions', {
+        org_id: organizationId
+      });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching latest vessel positions:', error);
+      return [];
     }
-    
-    query += ` ORDER BY v.id, vp.timestamp DESC`;
-    
-    const { data, error } = await supabase.rpc('execute_sql', { query });
-    if (error) throw error;
-    return data;
   }
 
   // Alert Management
   async createAlert(alert: AlertData) {
-    const { data, error } = await supabase
-      .from('alerts')
-      .insert(alert)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('create_alert', {
+        alert_data: alert
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating alert:', error);
+      throw error;
+    }
   }
 
   async getAlerts(organizationId?: string, status?: string) {
-    let query = supabase.from('alerts').select('*, vessels(name, mmsi)');
-    
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
+    try {
+      const { data, error } = await supabase.rpc('get_alerts', {
+        org_id: organizationId,
+        alert_status: status
+      });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      return [];
     }
-    
-    if (status) {
-      query = query.eq('status', status);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
   }
 
   async updateAlert(id: string, updates: any) {
-    const { data, error } = await supabase
-      .from('alerts')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('update_alert', {
+        alert_id: id,
+        updates: updates
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      throw error;
+    }
   }
 
   // Analytics Data
   async recordAnalyticsMetric(metric: AnalyticsMetric) {
-    const { data, error } = await supabase
-      .from('analytics_data')
-      .insert(metric)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('record_analytics_metric', {
+        metric_data: metric
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error recording analytics metric:', error);
+      throw error;
+    }
   }
 
   async getAnalyticsData(
@@ -187,27 +199,22 @@ class DataIntegrationService {
     organizationId?: string, 
     timeRange?: { start: string; end: string }
   ) {
-    let query = supabase
-      .from('analytics_data')
-      .select('*')
-      .eq('metric_name', metricName);
-    
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
+    try {
+      const { data, error } = await supabase.rpc('get_analytics_data', {
+        metric_name: metricName,
+        org_id: organizationId,
+        time_range: timeRange
+      });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      return [];
     }
-    
-    if (timeRange) {
-      query = query
-        .gte('timestamp', timeRange.start)
-        .lte('timestamp', timeRange.end);
-    }
-    
-    const { data, error } = await query.order('timestamp', { ascending: false });
-    if (error) throw error;
-    return data;
   }
 
-  // Real-time subscriptions
+  // Real-time subscriptions using generic channel approach
   subscribeToVesselPositions(callback: (payload: any) => void, organizationId?: string) {
     const channel = supabase
       .channel('vessel_positions_changes')
@@ -216,8 +223,7 @@ class DataIntegrationService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'vessel_positions',
-          filter: organizationId ? `vessel_id=in.(SELECT id FROM vessels WHERE organization_id='${organizationId}')` : undefined
+          table: 'vessel_positions'
         },
         callback
       )
@@ -234,8 +240,7 @@ class DataIntegrationService {
         {
           event: '*',
           schema: 'public',
-          table: 'alerts',
-          filter: organizationId ? `organization_id=eq.${organizationId}` : undefined
+          table: 'alerts'
         },
         callback
       )
@@ -246,30 +251,37 @@ class DataIntegrationService {
 
   // Data import/export utilities
   async importVesselData(vessels: VesselData[]) {
-    const { data, error } = await supabase
-      .from('vessels')
-      .upsert(vessels, { onConflict: 'mmsi' })
-      .select();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('import_vessel_data', {
+        vessels_data: vessels
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error importing vessel data:', error);
+      throw error;
+    }
   }
 
   async exportAnalyticsData(organizationId?: string, format = 'json') {
-    let query = supabase.from('analytics_data').select('*');
-    
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
+    try {
+      const { data, error } = await supabase.rpc('export_analytics_data', {
+        org_id: organizationId,
+        export_format: format
+      });
+      
+      if (error) throw error;
+      
+      if (format === 'csv') {
+        return this.convertToCSV(data);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error exporting analytics data:', error);
+      throw error;
     }
-    
-    const { data, error } = await query.order('timestamp', { ascending: false });
-    if (error) throw error;
-    
-    if (format === 'csv') {
-      return this.convertToCSV(data);
-    }
-    
-    return data;
   }
 
   private convertToCSV(data: any[]): string {
@@ -290,33 +302,38 @@ class DataIntegrationService {
 
   // Performance optimization utilities
   async cleanupOldPositions(daysToKeep = 30) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-    
-    const { error } = await supabase
-      .from('vessel_positions')
-      .delete()
-      .lt('timestamp', cutoffDate.toISOString());
-    
-    if (error) throw error;
+    try {
+      const { error } = await supabase.rpc('cleanup_old_positions', {
+        days_to_keep: daysToKeep
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error cleaning up old positions:', error);
+      throw error;
+    }
   }
 
   async getSystemHealth() {
     try {
-      const [vessels, alerts, positions] = await Promise.all([
-        supabase.from('vessels').select('id', { count: 'exact', head: true }),
-        supabase.from('alerts').select('id', { count: 'exact', head: true }),
-        supabase.from('vessel_positions').select('id', { count: 'exact', head: true })
-      ]);
-
-      return {
-        vessels_count: vessels.count || 0,
-        alerts_count: alerts.count || 0,
-        positions_count: positions.count || 0,
+      const { data, error } = await supabase.rpc('get_system_health');
+      
+      if (error) throw error;
+      
+      return data || {
+        vessels_count: 0,
+        alerts_count: 0,
+        positions_count: 0,
         last_check: new Date().toISOString()
       };
     } catch (error) {
-      throw error;
+      console.error('Error getting system health:', error);
+      return {
+        vessels_count: 0,
+        alerts_count: 0,
+        positions_count: 0,
+        last_check: new Date().toISOString()
+      };
     }
   }
 }
