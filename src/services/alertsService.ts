@@ -1,5 +1,6 @@
 import { liveDataService } from './liveDataService';
 import { ghostFleetDetectionService } from './ghostFleetDetectionService';
+import { routeOptimizationService } from './routeOptimizationService';
 
 export interface Alert {
   id: string;
@@ -61,6 +62,7 @@ class AlertsService {
   constructor() {
     this.initializeAlerts();
     this.subscribeToDetectionServices();
+    this.subscribeToRouteOptimization();
   }
 
   private initializeAlerts() {
@@ -143,6 +145,34 @@ class AlertsService {
           this.addAlert(newAlert);
         });
       }
+    });
+  }
+
+  private subscribeToRouteOptimization() {
+    // Subscribe to route optimization safety alerts
+    routeOptimizationService.subscribe(({ alerts: routeAlerts }) => {
+      routeAlerts.forEach(routeAlert => {
+        const alert: Alert = {
+          id: `ROUTE-${this.alertCounter++}`,
+          type: routeAlert.type === 'weather_warning' ? 'weather' : 'security',
+          severity: routeAlert.severity,
+          title: routeAlert.title,
+          description: routeAlert.description,
+          location: {
+            lat: routeAlert.location[1],
+            lng: routeAlert.location[0],
+            name: `${routeAlert.location[1].toFixed(2)}, ${routeAlert.location[0].toFixed(2)}`
+          },
+          timestamp: routeAlert.timestamp,
+          status: 'new',
+          source: 'ai_detection',
+          metadata: {
+            confidence: 0.95,
+            weatherConditions: routeAlert.weatherConditions
+          }
+        };
+        this.addAlert(alert);
+      });
     });
   }
 
