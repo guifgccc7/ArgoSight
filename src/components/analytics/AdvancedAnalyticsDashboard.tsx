@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +16,7 @@ import {
   Target,
   Layers
 } from "lucide-react";
-import { LineChart, Line, AreaChart, Area, ScatterPlot, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Treemap, Cell } from 'recharts';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Treemap, Cell } from 'recharts';
 
 interface TimeSeriesData {
   timestamp: string;
@@ -301,7 +300,6 @@ const AdvancedAnalyticsDashboard: React.FC = () => {
                     <Treemap
                       data={treemapData}
                       dataKey="size"
-                      ratio={4/3}
                       stroke="#374151"
                       fill="#06b6d4"
                     >
