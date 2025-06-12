@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,8 +38,8 @@ const OrganizationSelector = ({ onSelectOrganization, selectedOrganizationId }: 
 
   const fetchOrganizations = async () => {
     try {
-      // Use RPC call as a workaround since organizations table isn't in types yet
-      const { data, error } = await supabase.rpc('get_organizations');
+      // Use type assertion to bypass TypeScript errors until types are regenerated
+      const { data, error } = await (supabase as any).rpc('get_organizations');
       
       if (error) {
         console.error('Error fetching organizations:', error);
@@ -74,8 +73,8 @@ const OrganizationSelector = ({ onSelectOrganization, selectedOrganizationId }: 
     
     setIsLoading(true);
     try {
-      // Use RPC call as a workaround
-      const { data, error } = await supabase.rpc('create_organization', {
+      // Use type assertion to bypass TypeScript errors until types are regenerated
+      const { data, error } = await (supabase as any).rpc('create_organization', {
         org_name: newOrg.name,
         org_code: newOrg.code,
         org_type: newOrg.type,

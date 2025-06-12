@@ -49,7 +49,7 @@ class DataIntegrationService {
   // Vessel Management using RPC calls to avoid type issues
   async createVessel(vessel: VesselData) {
     try {
-      const { data, error } = await supabase.rpc('create_vessel', {
+      const { data, error } = await (supabase as any).rpc('create_vessel', {
         vessel_data: vessel
       });
       
@@ -63,7 +63,7 @@ class DataIntegrationService {
 
   async getVessels(organizationId?: string) {
     try {
-      const { data, error } = await supabase.rpc('get_vessels', {
+      const { data, error } = await (supabase as any).rpc('get_vessels', {
         org_id: organizationId
       });
       
@@ -77,7 +77,7 @@ class DataIntegrationService {
 
   async updateVessel(id: string, updates: Partial<VesselData>) {
     try {
-      const { data, error } = await supabase.rpc('update_vessel', {
+      const { data, error } = await (supabase as any).rpc('update_vessel', {
         vessel_id: id,
         updates: updates
       });
@@ -93,7 +93,7 @@ class DataIntegrationService {
   // Vessel Position Tracking
   async addVesselPosition(position: VesselPosition) {
     try {
-      const { data, error } = await supabase.rpc('add_vessel_position', {
+      const { data, error } = await (supabase as any).rpc('add_vessel_position', {
         position_data: position
       });
       
@@ -107,7 +107,7 @@ class DataIntegrationService {
 
   async getVesselPositions(vesselId: string, limit = 100) {
     try {
-      const { data, error } = await supabase.rpc('get_vessel_positions', {
+      const { data, error } = await (supabase as any).rpc('get_vessel_positions', {
         vessel_id: vesselId,
         result_limit: limit
       });
@@ -122,7 +122,7 @@ class DataIntegrationService {
 
   async getLatestVesselPositions(organizationId?: string) {
     try {
-      const { data, error } = await supabase.rpc('get_latest_vessel_positions', {
+      const { data, error } = await (supabase as any).rpc('get_latest_vessel_positions', {
         org_id: organizationId
       });
       
@@ -137,7 +137,7 @@ class DataIntegrationService {
   // Alert Management
   async createAlert(alert: AlertData) {
     try {
-      const { data, error } = await supabase.rpc('create_alert', {
+      const { data, error } = await (supabase as any).rpc('create_alert', {
         alert_data: alert
       });
       
@@ -151,7 +151,7 @@ class DataIntegrationService {
 
   async getAlerts(organizationId?: string, status?: string) {
     try {
-      const { data, error } = await supabase.rpc('get_alerts', {
+      const { data, error } = await (supabase as any).rpc('get_alerts', {
         org_id: organizationId,
         alert_status: status
       });
@@ -166,7 +166,7 @@ class DataIntegrationService {
 
   async updateAlert(id: string, updates: any) {
     try {
-      const { data, error } = await supabase.rpc('update_alert', {
+      const { data, error } = await (supabase as any).rpc('update_alert', {
         alert_id: id,
         updates: updates
       });
@@ -182,7 +182,7 @@ class DataIntegrationService {
   // Analytics Data
   async recordAnalyticsMetric(metric: AnalyticsMetric) {
     try {
-      const { data, error } = await supabase.rpc('record_analytics_metric', {
+      const { data, error } = await (supabase as any).rpc('record_analytics_metric', {
         metric_data: metric
       });
       
@@ -200,7 +200,7 @@ class DataIntegrationService {
     timeRange?: { start: string; end: string }
   ) {
     try {
-      const { data, error } = await supabase.rpc('get_analytics_data', {
+      const { data, error } = await (supabase as any).rpc('get_analytics_data', {
         metric_name: metricName,
         org_id: organizationId,
         time_range: timeRange
@@ -252,7 +252,7 @@ class DataIntegrationService {
   // Data import/export utilities
   async importVesselData(vessels: VesselData[]) {
     try {
-      const { data, error } = await supabase.rpc('import_vessel_data', {
+      const { data, error } = await (supabase as any).rpc('import_vessel_data', {
         vessels_data: vessels
       });
       
@@ -266,7 +266,7 @@ class DataIntegrationService {
 
   async exportAnalyticsData(organizationId?: string, format = 'json') {
     try {
-      const { data, error } = await supabase.rpc('export_analytics_data', {
+      const { data, error } = await (supabase as any).rpc('export_analytics_data', {
         org_id: organizationId,
         export_format: format
       });
@@ -303,7 +303,7 @@ class DataIntegrationService {
   // Performance optimization utilities
   async cleanupOldPositions(daysToKeep = 30) {
     try {
-      const { error } = await supabase.rpc('cleanup_old_positions', {
+      const { error } = await (supabase as any).rpc('cleanup_old_positions', {
         days_to_keep: daysToKeep
       });
       
@@ -316,7 +316,7 @@ class DataIntegrationService {
 
   async getSystemHealth() {
     try {
-      const { data, error } = await supabase.rpc('get_system_health');
+      const { data, error } = await (supabase as any).rpc('get_system_health');
       
       if (error) throw error;
       
