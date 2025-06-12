@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +27,9 @@ const AIAnalyticsDashboard = () => {
     // Start pattern recognition if not already running
     patternRecognitionService.startPatternRecognition();
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const patternDistribution = [
