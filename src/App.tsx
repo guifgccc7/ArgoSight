@@ -1,14 +1,13 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/context/theme-provider";
-import { AuthProvider } from "@/hooks/useAuth";
-import Layout from "@/components/Layout";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Auth from "./pages/Auth";
+import { QueryClient } from "react-query";
+import { AuthProvider } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import RealTimeOperations from "./pages/RealTimeOperations";
 import DataFusion from "./pages/DataFusion";
 import GhostFleet from "./pages/GhostFleet";
 import Alerts from "./pages/Alerts";
@@ -19,57 +18,38 @@ import MediterraneanRoutes from "./pages/MediterraneanRoutes";
 import ClimateIntel from "./pages/ClimateIntel";
 import IntelligenceDB from "./pages/IntelligenceDB";
 import IntegratedIntel from "./pages/IntegratedIntel";
-import RealTimeOperations from "./pages/RealTimeOperations";
-import NotFound from "./pages/NotFound";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+import ProductionAdmin from "./pages/ProductionAdmin";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-const App = () => {
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="maritime-intel-theme">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }>
-                  <Route index element={<Index />} />
-                  <Route path="/data-fusion" element={<DataFusion />} />
-                  <Route path="/ghost-fleet" element={<GhostFleet />} />
-                  <Route path="/alerts" element={<Alerts />} />
-                  <Route path="/satellite-imagery" element={<SatelliteImagery />} />
-                  <Route path="/arctic-routes" element={<ArcticRoutes />} />
-                  <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
-                  <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
-                  <Route path="/climate-intel" element={<ClimateIntel />} />
-                  <Route path="/intelligence-db" element={<IntelligenceDB />} />
-                  <Route path="/integrated-intel" element={<IntegratedIntel />} />
-                  <Route path="/real-time-operations" element={<RealTimeOperations />} />
-                  <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <QueryClient>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/" element={<Index />} />
+              <Route path="/real-time-operations" element={<RealTimeOperations />} />
+              <Route path="/data-fusion" element={<DataFusion />} />
+              <Route path="/ghost-fleet" element={<GhostFleet />} />
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/satellite-imagery" element={<SatelliteImagery />} />
+              <Route path="/arctic-routes" element={<ArcticRoutes />} />
+              <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
+              <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
+              <Route path="/climate-intel" element={<ClimateIntel />} />
+              <Route path="/intelligence-db" element={<IntelligenceDB />} />
+              <Route path="/integrated-intel" element={<IntegratedIntel />} />
+              <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
+              <Route path="/production-admin" element={<ProductionAdmin />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClient>
   );
-};
+}
 
 export default App;

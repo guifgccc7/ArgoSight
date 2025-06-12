@@ -13,7 +13,8 @@ import {
   Brain,
   AlertTriangle,
   Activity,
-  BarChart3
+  BarChart3,
+  Settings
 } from "lucide-react";
 
 const navigation = [
@@ -30,6 +31,7 @@ const navigation = [
   { name: "Intelligence DB", href: "/intelligence-db", icon: Search },
   { name: "Integrated Intel", href: "/integrated-intel", icon: Brain },
   { name: "Advanced Analytics", href: "/advanced-analytics", icon: BarChart3 },
+  { name: "Production Admin", href: "/production-admin", icon: Settings },
 ];
 
 const Sidebar = () => {
