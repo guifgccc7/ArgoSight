@@ -31,9 +31,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   const alertMarkers = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const [liveData, setLiveData] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const routesAdded = useRef(false);
 
+  // Initialize map only once
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || map.current) return;
 
     // Initialize map with token
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ3VpNzc3NyIsImEiOiJjbWJyenl1aDQwY2t1MmlzN2RlbG9jbnVhIn0.Ioi4GvqrDAPLuj_3qOglcg';
@@ -53,9 +55,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 
     // Wait for map to load before adding data
     map.current.on('load', () => {
-      if (showRoutes) {
-        addMaritimeRoutes();
-      }
       setIsInitialized(true);
     });
 
@@ -72,8 +71,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     return () => {
       unsubscribe();
       map.current?.remove();
+      map.current = null;
     };
-  }, [style, center, zoom, showRoutes]);
+  }, []); // Empty dependency array - only run once
+
+  // Add routes when map is initialized and routes should be shown
+  useEffect(() => {
+    if (!map.current || !isInitialized || routesAdded.current) return;
+    
+    if (showRoutes) {
+      addMaritimeRoutes();
+      routesAdded.current = true;
+    }
+  }, [showRoutes, isInitialized]);
 
   // Update markers only when live data changes and map is initialized
   useEffect(() => {
