@@ -11,13 +11,15 @@ import {
   Waves,
   CloudSnow,
   Search,
-  Brain
+  Brain,
+  AlertTriangle
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Data Fusion", href: "/data-fusion", icon: Database },
   { name: "Ghost Fleet", href: "/ghost-fleet", icon: Ship },
+  { name: "Alerts", href: "/alerts", icon: AlertTriangle },
   { name: "Satellite Imagery", href: "/satellite-imagery", icon: Satellite },
   { name: "Arctic Routes", href: "/arctic-routes", icon: Snowflake },
   { name: "Cost Savings", href: "/arctic-cost-savings", icon: DollarSign },

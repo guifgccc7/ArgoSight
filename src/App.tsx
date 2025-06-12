@@ -50,6 +50,7 @@ const App = () => {
                   <Route index element={<Index />} />
                   <Route path="/data-fusion" element={<DataFusion />} />
                   <Route path="/ghost-fleet" element={<GhostFleet />} />
+                  <Route path="/alerts" element={<Alerts />} />
                   <Route path="/satellite-imagery" element={<SatelliteImagery />} />
                   <Route path="/arctic-routes" element={<ArcticRoutes />} />
                   <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
