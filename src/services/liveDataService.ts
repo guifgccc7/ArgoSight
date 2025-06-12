@@ -34,6 +34,13 @@ export interface ThreatAlert {
   timestamp: string;
 }
 
+export interface LiveDataUpdate {
+  vessels?: VesselData[];
+  alerts?: ThreatAlert[];
+  weather?: WeatherData[];
+  timestamp: string;
+}
+
 class LiveDataService {
   private vessels: VesselData[] = [];
   private alerts: ThreatAlert[] = [];
@@ -79,7 +86,10 @@ class LiveDataService {
     }
 
     // Notify subscribers of updates
-    this.notifySubscribers();
+    this.notifySubscribers({
+      vessels: this.vessels,
+      timestamp: new Date().toISOString()
+    });
   }
 
   private determineVesselStatus(aisData: any): 'active' | 'warning' | 'danger' | 'dark' {
@@ -289,7 +299,10 @@ class LiveDataService {
     };
 
     this.alerts.push(alert);
-    this.notifySubscribers();
+    this.notifySubscribers({
+      alerts: this.alerts,
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Stop live data simulation
@@ -311,7 +324,7 @@ class LiveDataService {
   }
 
   // Notify all subscribers
-  private notifySubscribers(data: any) {
+  private notifySubscribers(data: LiveDataUpdate) {
     this.subscribers.forEach(callback => callback(data));
   }
 
