@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SystemMetric {
@@ -64,8 +63,9 @@ class MonitoringService {
       // Database metrics
       const { data: healthData } = await supabase.rpc('get_system_health');
       
-      if (healthData) {
-        const health = healthData as SystemHealthData;
+      if (healthData && typeof healthData === 'object') {
+        // Safely cast to SystemHealthData with proper type checking
+        const health = healthData as unknown as SystemHealthData;
         
         await this.recordMetric({
           name: 'vessels_count',
