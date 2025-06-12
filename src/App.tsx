@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import IntelligenceDB from "./pages/IntelligenceDB";
 import IntegratedIntel from "./pages/IntegratedIntel";
 import RealTimeOperations from "./pages/RealTimeOperations";
 import NotFound from "./pages/NotFound";
+import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +60,7 @@ const App = () => {
                   <Route path="/intelligence-db" element={<IntelligenceDB />} />
                   <Route path="/integrated-intel" element={<IntegratedIntel />} />
                   <Route path="/real-time-operations" element={<RealTimeOperations />} />
+                  <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -13,7 +12,8 @@ import {
   Search,
   Brain,
   AlertTriangle,
-  Activity
+  Activity,
+  BarChart3
 } from "lucide-react";
 
 const navigation = [
@@ -29,6 +29,7 @@ const navigation = [
   { name: "Climate Intel", href: "/climate-intel", icon: CloudSnow },
   { name: "Intelligence DB", href: "/intelligence-db", icon: Search },
   { name: "Integrated Intel", href: "/integrated-intel", icon: Brain },
+  { name: "Advanced Analytics", href: "/advanced-analytics", icon: BarChart3 },
 ];
 
 const Sidebar = () => {
