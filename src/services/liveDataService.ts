@@ -35,9 +35,68 @@ export interface ThreatAlert {
 }
 
 class LiveDataService {
-  private wsConnection: WebSocket | null = null;
-  private subscribers: Set<(data: any) => void> = new Set();
-  private simulationInterval: NodeJS.Timeout | null = null;
+  private vessels: VesselData[] = [];
+  private alerts: ThreatAlert[] = [];
+  private isActive = false;
+  private subscribers: Set<(data: LiveDataUpdate) => void> = new Set();
+
+  constructor() {
+    // Initialize with AISStream integration
+    this.initializeAISStream();
+  }
+
+  private async initializeAISStream(): Promise<void> {
+    const { aisStreamService } = await import('./aisStreamService');
+    
+    // Subscribe to real AIS data
+    aisStreamService.subscribe((aisData) => {
+      this.updateVesselFromAIS(aisData);
+    });
+
+    // Start the AIS stream
+    await aisStreamService.startAISStream();
+  }
+
+  private updateVesselFromAIS(aisData: any): void {
+    const vesselData: VesselData = {
+      id: aisData.mmsi,
+      name: aisData.shipName,
+      lat: aisData.latitude,
+      lng: aisData.longitude,
+      speed: aisData.speed,
+      heading: aisData.course,
+      vesselType: 'commercial',
+      status: this.determineVesselStatus(aisData),
+      lastUpdate: aisData.timestamp
+    };
+
+    // Update or add vessel
+    const existingIndex = this.vessels.findIndex(v => v.id === vesselData.id);
+    if (existingIndex >= 0) {
+      this.vessels[existingIndex] = vesselData;
+    } else {
+      this.vessels.push(vesselData);
+    }
+
+    // Notify subscribers of updates
+    this.notifySubscribers();
+  }
+
+  private determineVesselStatus(aisData: any): 'active' | 'warning' | 'danger' | 'dark' {
+    const timeDiff = Date.now() - new Date(aisData.timestamp).getTime();
+    
+    // If data is older than 30 minutes, consider it potentially dark
+    if (timeDiff > 30 * 60 * 1000) {
+      return 'dark';
+    }
+    
+    // Check for suspicious patterns
+    if (aisData.speed > 30) {
+      return 'warning'; // Very high speed
+    }
+    
+    return 'active';
+  }
 
   // Enhanced vessel data generation with suspicious activity simulation
   generateMockVesselData(): VesselData[] {
@@ -192,34 +251,57 @@ class LiveDataService {
   }
 
   // Start live data simulation
-  startLiveDataFeed() {
-    if (this.simulationInterval) return;
+  startLiveDataFeed(): void {
+    if (this.isActive) return;
+    
+    this.isActive = true;
+    console.log('Starting live data feed with real AIS integration...');
 
-    this.simulationInterval = setInterval(() => {
-      const liveData = {
-        vessels: this.generateMockVesselData(),
-        weather: this.generateMockWeatherData(),
-        alerts: this.generateMockAlerts(),
-        timestamp: new Date().toISOString()
-      };
+    // The AIS data will come through the AISStream service
+    // Keep existing simulation for other data types
+    this.simulateAdditionalData();
+  }
 
-      this.notifySubscribers(liveData);
-    }, 5000); // Update every 5 seconds
+  private simulateAdditionalData(): void {
+    // Simulate weather alerts and other intelligence data
+    setInterval(() => {
+      // Generate occasional threat alerts
+      if (Math.random() < 0.1 && this.alerts.length < 5) {
+        this.generateThreatAlert();
+      }
+      
+      // Clean up old alerts
+      this.alerts = this.alerts.filter(alert => 
+        Date.now() - new Date(alert.timestamp).getTime() < 24 * 60 * 60 * 1000
+      );
+    }, 30000);
+  }
 
-    console.log('Live data feed started');
+  // Generate threat alert
+  private generateThreatAlert(): void {
+    const alert: ThreatAlert = {
+      id: `alert-${Date.now() + 3}`,
+      type: 'ghost_vessel',
+      severity: 'high',
+      location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+      description: 'AI detected suspicious vessel behavior',
+      timestamp: new Date().toISOString()
+    };
+
+    this.alerts.push(alert);
+    this.notifySubscribers();
   }
 
   // Stop live data simulation
   stopLiveDataFeed() {
-    if (this.simulationInterval) {
-      clearInterval(this.simulationInterval);
-      this.simulationInterval = null;
+    if (this.isActive) {
+      this.isActive = false;
       console.log('Live data feed stopped');
     }
   }
 
   // Subscribe to live data updates
-  subscribe(callback: (data: any) => void) {
+  subscribe(callback: (data: LiveDataUpdate) => void) {
     this.subscribers.add(callback);
     
     // Return unsubscribe function
