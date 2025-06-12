@@ -1,14 +1,16 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import ClimateSecurityPanel from "@/components/ClimateSecurityPanel";
 import MapboxMap from "@/components/maps/MapboxMap";
 import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
-import { Ship, Satellite, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import SystemHealthMonitor from "@/components/SystemHealthMonitor";
+import { Ship, Satellite, AlertTriangle, TrendingUp, Activity, Brain, Shield, Zap, Globe, Eye } from "lucide-react";
 import { liveDataService } from "@/services/liveDataService";
 import { alertsService, Alert } from "@/services/alertsService";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [liveData, setLiveData] = useState<any>(null);
@@ -68,10 +70,44 @@ const Index = () => {
     }
   };
 
+  const enterpriseFeatures = [
+    {
+      icon: Brain,
+      title: "AI-Powered Intelligence",
+      description: "Advanced machine learning for pattern recognition and threat prediction",
+      link: "/integrated-intel",
+      color: "from-purple-500 to-blue-500"
+    },
+    {
+      icon: Eye,
+      title: "3D Vessel Tracking",
+      description: "Interactive 3D visualization with real-time vessel monitoring",
+      link: "/integrated-intel",
+      color: "from-cyan-500 to-blue-500"
+    },
+    {
+      icon: Shield,
+      title: "Advanced Security",
+      description: "End-to-end encryption, audit logs, and compliance monitoring",
+      link: "/integrated-intel",
+      color: "from-red-500 to-orange-500"
+    },
+    {
+      icon: Zap,
+      title: "Performance Optimization",
+      description: "PWA features, intelligent caching, and ML acceleration",
+      link: "/integrated-intel",
+      color: "from-yellow-500 to-orange-500"
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Maritime Intelligence Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-white">Maritime Intelligence Command Center</h1>
+          <p className="text-slate-400 mt-1">Enterprise-grade maritime intelligence platform</p>
+        </div>
         <div className="flex items-center space-x-2">
           <Badge variant="outline" className={`${isLiveDataActive ? 'text-green-400 border-green-400' : 'text-slate-400 border-slate-400'}`}>
             {isLiveDataActive ? (
@@ -82,6 +118,9 @@ const Index = () => {
             ) : 'OFFLINE'}
           </Badge>
           <Badge variant="outline" className="text-green-400 border-green-400">
+            ENTERPRISE
+          </Badge>
+          <Badge variant="outline" className="text-cyan-400 border-cyan-400">
             OPERATIONAL
           </Badge>
         </div>
@@ -140,19 +179,47 @@ const Index = () => {
         </Card>
       </div>
 
+      {/* Enterprise Features Showcase */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {enterpriseFeatures.map((feature, index) => {
+          const IconComponent = feature.icon;
+          return (
+            <Link key={index} to={feature.link}>
+              <Card className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-all cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-white font-medium mb-2">{feature.title}</h3>
+                  <p className="text-sm text-slate-400">{feature.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Enhanced Live Maritime Map with Vessel Tracking */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center space-x-2">
-                <span>Global Maritime Activity</span>
-                {isLiveDataActive && (
-                  <Badge variant="outline" className="text-green-400 border-green-400">
-                    <Activity className="h-3 w-3 mr-1" />
-                    LIVE
-                  </Badge>
-                )}
+              <CardTitle className="text-white flex items-center justify-between">
+                <span className="flex items-center space-x-2">
+                  <span>Global Maritime Activity</span>
+                  {isLiveDataActive && (
+                    <Badge variant="outline" className="text-green-400 border-green-400">
+                      <Activity className="h-3 w-3 mr-1" />
+                      LIVE
+                    </Badge>
+                  )}
+                </span>
+                <Link to="/integrated-intel">
+                  <Button variant="outline" size="sm" className="text-cyan-400 border-cyan-600">
+                    <Eye className="h-4 w-4 mr-1" />
+                    3D View
+                  </Button>
+                </Link>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -177,17 +244,28 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Climate Security Panel */}
-      <ClimateSecurityPanel />
+      {/* System Health and Climate Security */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SystemHealthMonitor />
+        <ClimateSecurityPanel />
+      </div>
 
       {/* Enhanced Real-Time Alerts Activity Feed */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center justify-between">
             <span>Live Intelligence Activity</span>
-            <Badge variant="outline" className="text-green-400 border-green-400">
-              REAL-TIME ALERTS
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="text-green-400 border-green-400">
+                REAL-TIME ALERTS
+              </Badge>
+              <Link to="/integrated-intel">
+                <Button variant="outline" size="sm" className="text-cyan-400 border-cyan-600">
+                  <Brain className="h-4 w-4 mr-1" />
+                  Advanced Analytics
+                </Button>
+              </Link>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

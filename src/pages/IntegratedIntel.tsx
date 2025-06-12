@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +16,11 @@ import {
   Users,
   Clock,
   Target,
-  Search
+  Search,
+  Eye,
+  Settings,
+  FileText,
+  Lock
 } from "lucide-react";
 import AIAnalyticsDashboard from "@/components/analytics/AIAnalyticsDashboard";
 import AdvancedSearchInterface from "@/components/analytics/AdvancedSearchInterface";
@@ -26,6 +29,11 @@ import NetworkAnalysisPanel from "@/components/intelligence/NetworkAnalysisPanel
 import RealTimeAlertsCenter from "@/components/intelligence/RealTimeAlertsCenter";
 import ThreatIntelligenceHub from "@/components/intelligence/ThreatIntelligenceHub";
 import OperationalInsights from "@/components/intelligence/OperationalInsights";
+import Advanced3DVesselTracking from "@/components/visualization/Advanced3DVesselTracking";
+import ComprehensiveReportingSystem from "@/components/reports/ComprehensiveReportingSystem";
+import AdvancedSecurityFeatures from "@/components/security/AdvancedSecurityFeatures";
+import PerformanceOptimization from "@/components/performance/PerformanceOptimization";
+import APIIntegrationCenter from "@/components/integration/APIIntegrationCenter";
 
 const IntegratedIntel = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -76,13 +84,13 @@ const IntegratedIntel = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Advanced Intelligence Hub</h1>
-          <p className="text-slate-400 mt-2">AI-driven analytics, threat assessment, and intelligent search</p>
+          <h1 className="text-3xl font-bold text-white">Enterprise Intelligence Platform</h1>
+          <p className="text-slate-400 mt-2">Advanced AI-driven maritime intelligence with enterprise-grade features</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-slate-300">AI Systems Operational</span>
+            <span className="text-sm text-slate-300">Enterprise Systems Operational</span>
           </div>
           <Badge variant="outline" className="text-green-400 border-green-400">
             THREAT LEVEL: {platformStats.threatLevel.toUpperCase()}
@@ -178,39 +186,55 @@ const IntegratedIntel = () => {
 
       {/* Main Intelligence Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-slate-800 border-slate-700">
+        <TabsList className="bg-slate-800 border-slate-700 grid grid-cols-5 lg:grid-cols-10">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <Activity className="h-4 w-4" />
-            <span>Overview</span>
+            <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="3d-tracking" className="flex items-center space-x-2">
+            <Eye className="h-4 w-4" />
+            <span className="hidden sm:inline">3D Tracking</span>
           </TabsTrigger>
           <TabsTrigger value="ai-analytics" className="flex items-center space-x-2">
             <Brain className="h-4 w-4" />
-            <span>AI Analytics</span>
+            <span className="hidden sm:inline">AI Analytics</span>
           </TabsTrigger>
           <TabsTrigger value="threat-assessment" className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
-            <span>Threat Assessment</span>
+            <span className="hidden sm:inline">Threats</span>
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center space-x-2">
+            <Lock className="h-4 w-4" />
+            <span className="hidden sm:inline">Security</span>
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center space-x-2">
+            <Zap className="h-4 w-4" />
+            <span className="hidden sm:inline">Performance</span>
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center space-x-2">
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">APIs</span>
           </TabsTrigger>
           <TabsTrigger value="search" className="flex items-center space-x-2">
             <Search className="h-4 w-4" />
-            <span>Advanced Search</span>
+            <span className="hidden sm:inline">Search</span>
           </TabsTrigger>
           <TabsTrigger value="network" className="flex items-center space-x-2">
             <Network className="h-4 w-4" />
-            <span>Network Analysis</span>
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center space-x-2">
-            <Zap className="h-4 w-4" />
-            <span>Real-Time Alerts</span>
-          </TabsTrigger>
-          <TabsTrigger value="operations" className="flex items-center space-x-2">
-            <Target className="h-4 w-4" />
-            <span>Operations</span>
+            <span className="hidden sm:inline">Network</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <OperationalInsights />
+        </TabsContent>
+
+        <TabsContent value="3d-tracking">
+          <Advanced3DVesselTracking />
         </TabsContent>
 
         <TabsContent value="ai-analytics">
@@ -221,20 +245,28 @@ const IntegratedIntel = () => {
           <ThreatAssessmentPanel />
         </TabsContent>
 
+        <TabsContent value="reports">
+          <ComprehensiveReportingSystem />
+        </TabsContent>
+
+        <TabsContent value="security">
+          <AdvancedSecurityFeatures />
+        </TabsContent>
+
+        <TabsContent value="performance">
+          <PerformanceOptimization />
+        </TabsContent>
+
+        <TabsContent value="integrations">
+          <APIIntegrationCenter />
+        </TabsContent>
+
         <TabsContent value="search">
           <AdvancedSearchInterface />
         </TabsContent>
 
         <TabsContent value="network">
           <NetworkAnalysisPanel />
-        </TabsContent>
-
-        <TabsContent value="alerts">
-          <RealTimeAlertsCenter />
-        </TabsContent>
-
-        <TabsContent value="operations">
-          <OperationalInsights />
         </TabsContent>
       </Tabs>
 
