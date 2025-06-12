@@ -16,9 +16,12 @@ import {
   Globe,
   Users,
   Clock,
-  Target
+  Target,
+  Search
 } from "lucide-react";
-import AIAnalyticsDashboard from "@/components/intelligence/AIAnalyticsDashboard";
+import AIAnalyticsDashboard from "@/components/analytics/AIAnalyticsDashboard";
+import AdvancedSearchInterface from "@/components/analytics/AdvancedSearchInterface";
+import ThreatAssessmentPanel from "@/components/analytics/ThreatAssessmentPanel";
 import NetworkAnalysisPanel from "@/components/intelligence/NetworkAnalysisPanel";
 import RealTimeAlertsCenter from "@/components/intelligence/RealTimeAlertsCenter";
 import ThreatIntelligenceHub from "@/components/intelligence/ThreatIntelligenceHub";
@@ -55,17 +58,17 @@ const IntegratedIntel = () => {
     },
     {
       icon: Shield,
-      title: "Threat Detection",
-      description: "Real-time threat identification and risk assessment",
+      title: "Threat Assessment",
+      description: "AI-powered vessel risk analysis and behavioral predictions",
       status: "active",
-      metrics: { threats: 23, blocked: "1.2K", success: "98.5%" }
+      metrics: { threats: 23, assessed: "156", accuracy: "89%" }
     },
     {
-      icon: Zap,
-      title: "Rapid Response",
-      description: "Instant alert generation and automated response protocols",
+      icon: Search,
+      title: "Advanced Search",
+      description: "Natural language processing and multi-source intelligence search",
       status: "active",
-      metrics: { alerts: 156, response: "0.34s", automation: "85%" }
+      metrics: { sources: 8, queries: "2.4K", speed: "0.2s" }
     }
   ];
 
@@ -73,13 +76,13 @@ const IntegratedIntel = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Integrated Intelligence Platform</h1>
-          <p className="text-slate-400 mt-2">Advanced AI-driven intelligence analysis and threat detection</p>
+          <h1 className="text-3xl font-bold text-white">Advanced Intelligence Hub</h1>
+          <p className="text-slate-400 mt-2">AI-driven analytics, threat assessment, and intelligent search</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-slate-300">All Systems Operational</span>
+            <span className="text-sm text-slate-300">AI Systems Operational</span>
           </div>
           <Badge variant="outline" className="text-green-400 border-green-400">
             THREAT LEVEL: {platformStats.threatLevel.toUpperCase()}
@@ -118,7 +121,7 @@ const IntegratedIntel = () => {
             <div className="flex items-center space-x-3">
               <AlertTriangle className="h-8 w-8 text-red-400" />
               <div>
-                <p className="text-sm text-slate-400">Active Alerts</p>
+                <p className="text-sm text-slate-400">Active Threats</p>
                 <p className="text-2xl font-bold text-white">{platformStats.activeAlerts}</p>
               </div>
             </div>
@@ -130,7 +133,7 @@ const IntegratedIntel = () => {
             <div className="flex items-center space-x-3">
               <TrendingUp className="h-8 w-8 text-green-400" />
               <div>
-                <p className="text-sm text-slate-400">Accuracy Rate</p>
+                <p className="text-sm text-slate-400">Detection Accuracy</p>
                 <p className="text-2xl font-bold text-white">{platformStats.accuracy}%</p>
               </div>
             </div>
@@ -138,7 +141,7 @@ const IntegratedIntel = () => {
         </Card>
       </div>
 
-      {/* Capability Overview */}
+      {/* Enhanced Capability Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {capabilities.map((capability, index) => {
           const IconComponent = capability.icon;
@@ -184,6 +187,14 @@ const IntegratedIntel = () => {
             <Brain className="h-4 w-4" />
             <span>AI Analytics</span>
           </TabsTrigger>
+          <TabsTrigger value="threat-assessment" className="flex items-center space-x-2">
+            <Shield className="h-4 w-4" />
+            <span>Threat Assessment</span>
+          </TabsTrigger>
+          <TabsTrigger value="search" className="flex items-center space-x-2">
+            <Search className="h-4 w-4" />
+            <span>Advanced Search</span>
+          </TabsTrigger>
           <TabsTrigger value="network" className="flex items-center space-x-2">
             <Network className="h-4 w-4" />
             <span>Network Analysis</span>
@@ -191,10 +202,6 @@ const IntegratedIntel = () => {
           <TabsTrigger value="alerts" className="flex items-center space-x-2">
             <Zap className="h-4 w-4" />
             <span>Real-Time Alerts</span>
-          </TabsTrigger>
-          <TabsTrigger value="threats" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>Threat Intelligence</span>
           </TabsTrigger>
           <TabsTrigger value="operations" className="flex items-center space-x-2">
             <Target className="h-4 w-4" />
@@ -210,6 +217,14 @@ const IntegratedIntel = () => {
           <AIAnalyticsDashboard />
         </TabsContent>
 
+        <TabsContent value="threat-assessment">
+          <ThreatAssessmentPanel />
+        </TabsContent>
+
+        <TabsContent value="search">
+          <AdvancedSearchInterface />
+        </TabsContent>
+
         <TabsContent value="network">
           <NetworkAnalysisPanel />
         </TabsContent>
@@ -218,16 +233,12 @@ const IntegratedIntel = () => {
           <RealTimeAlertsCenter />
         </TabsContent>
 
-        <TabsContent value="threats">
-          <ThreatIntelligenceHub />
-        </TabsContent>
-
         <TabsContent value="operations">
           <OperationalInsights />
         </TabsContent>
       </Tabs>
 
-      {/* Platform Status Footer */}
+      {/* Enhanced Platform Status Footer */}
       <Card className="bg-slate-800 border-slate-700">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
