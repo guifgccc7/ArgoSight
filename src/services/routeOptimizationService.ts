@@ -391,8 +391,16 @@ class RouteOptimizationService {
     return totalDistance;
   }
 
-  // Public API
-  subscribe(callback: (data: { recommendations: RouteRecommendation[], alerts: SafetyAlert[] }) => void): () => void {
+  // Public API methods
+  public getRouteRecommendations(): RouteRecommendation[] {
+    return Array.from(this.recommendations.values());
+  }
+
+  public getSafetyAlerts(): SafetyAlert[] {
+    return Array.from(this.safetyAlerts.values());
+  }
+
+  public subscribe(callback: (data: { recommendations: RouteRecommendation[], alerts: SafetyAlert[] }) => void): () => void {
     this.subscribers.add(callback);
     return () => this.subscribers.delete(callback);
   }
@@ -403,14 +411,6 @@ class RouteOptimizationService {
       alerts: Array.from(this.safetyAlerts.values())
     };
     this.subscribers.forEach(callback => callback(data));
-  }
-
-  getRecommendations(): RouteRecommendation[] {
-    return Array.from(this.recommendations.values());
-  }
-
-  getSafetyAlerts(): SafetyAlert[] {
-    return Array.from(this.safetyAlerts.values());
   }
 
   // Clean up old data

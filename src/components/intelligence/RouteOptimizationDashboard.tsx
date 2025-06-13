@@ -36,7 +36,7 @@ const RouteOptimizationDashboard = () => {
     });
 
     // Load initial data
-    setRecommendations(routeOptimizationService.getRecommendations());
+    setRecommendations(routeOptimizationService.getRouteRecommendations());
     setSafetyAlerts(routeOptimizationService.getSafetyAlerts());
 
     return unsubscribe;
