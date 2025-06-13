@@ -54,5 +54,8 @@ enable_confirmations = false
 [functions.weather-data]
 verify_jwt = false
 
+[functions.satellite-data]
+verify_jwt = false
+
 [functions.aisstream-integration]
 verify_jwt = false
