@@ -1,3 +1,4 @@
+
 import { liveDataService } from './liveDataService';
 import { ghostFleetDetectionService } from './ghostFleetDetectionService';
 import { routeOptimizationService } from './routeOptimizationService';
@@ -21,6 +22,12 @@ export interface Alert {
     vesselId?: string;
     confidence?: number;
     evidenceLinks?: string[];
+    weatherConditions?: {
+      windSpeed: number;
+      waveHeight: number;
+      visibility: number;
+      temperature: number;
+    };
   };
 }
 
