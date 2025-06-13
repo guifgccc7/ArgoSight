@@ -1,3 +1,4 @@
+
 import { realTimeDataProcessor, FusedVesselData } from './realTimeDataProcessor';
 import { advancedMLService, AnomalyDetectionResult, PredictiveAnalysisResult } from './advancedMLService';
 import { alertsService } from './alertsService';
@@ -266,7 +267,7 @@ class EnhancedRealTimeProcessor {
         },
         timestamp: new Date().toISOString(),
         status: 'new' as const,
-        source: 'enhanced_ml' as const,
+        source: 'ai_detection' as const,
         metadata: {
           insights: criticalInsights,
           confidence: Math.max(...criticalInsights.map(i => i.confidence)),
