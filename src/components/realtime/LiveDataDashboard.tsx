@@ -110,8 +110,24 @@ const LiveDataDashboard: React.FC<LiveDataDashboardProps> = ({ isDemoMode = fals
         {/* Data Sources Status */}
         <DataSourcesPanel dataSources={isDemoMode 
           ? [
-            { id: "sim_ais", name: "Simulated AIS Feed", status: "active", reliability: 1, latency: 42, lastUpdate: new Date().toISOString() },
-            { id: "sim_weather", name: "Simulated Weather Feed", status: "active", reliability: 1, latency: 19, lastUpdate: new Date().toISOString() }
+            { 
+              id: "sim_ais", 
+              name: "Simulated AIS Feed", 
+              type: "ais",
+              status: "active", 
+              reliability: 1, 
+              latency: 42, 
+              lastUpdate: new Date().toISOString() 
+            },
+            { 
+              id: "sim_weather", 
+              name: "Simulated Weather Feed", 
+              type: "weather",
+              status: "active", 
+              reliability: 1, 
+              latency: 19, 
+              lastUpdate: new Date().toISOString() 
+            }
           ] 
           : dataSources} />
 
