@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { realTimeDataProcessor, DataSource, ProcessingMetrics } from '@/services/realTimeDataProcessor';
 import { intelligentAlertingSystem, AlertCorrelation } from '@/services/intelligentAlertingSystem';
+import { realDataIntegrationService } from '@/services/realDataIntegrationService';
 import SystemHealthMonitor from '@/components/SystemHealthMonitor';
 
 const LiveDataDashboard: React.FC = () => {
@@ -28,7 +30,7 @@ const LiveDataDashboard: React.FC = () => {
     activeConnections: 0
   });
   const [correlations, setCorrelations] = useState<AlertCorrelation[]>([]);
-  const [isLiveMode, setIsLiveMode] = useState(false);
+  const [isLiveMode, setIsLiveMode] = useState(true); // Always live mode with real data
 
   useEffect(() => {
     setDataSources(realTimeDataProcessor.getDataSources());
@@ -41,15 +43,18 @@ const LiveDataDashboard: React.FC = () => {
       setCorrelations(prev => [correlation, ...prev.slice(0, 9)]);
     });
 
+    // Start real-time data feeds automatically
+    realDataIntegrationService.startRealTimeDataFeed();
+
     return () => {
       unsubscribeMetrics();
       unsubscribeCorrelations();
     };
   }, []);
 
-  const handleStartLiveData = () => {
-    setIsLiveMode(true);
-    realTimeDataProcessor.simulateLiveData();
+  const handleRefreshData = async () => {
+    console.log('Refreshing real-time data feeds...');
+    await realDataIntegrationService.startRealTimeDataFeed();
   };
 
   const getStatusIcon = (status: string) => {
@@ -79,21 +84,16 @@ const LiveDataDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Real-Time Data Processing</h2>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className={isLiveMode ? 'text-green-400 border-green-400' : 'text-slate-400 border-slate-400'}>
-            {isLiveMode ? (
-              <>
-                <Activity className="h-3 w-3 mr-1" />
-                LIVE
-              </>
-            ) : 'STANDBY'}
+          <Badge variant="outline" className="text-green-400 border-green-400">
+            <Activity className="h-3 w-3 mr-1" />
+            LIVE - REAL DATA
           </Badge>
           <Button 
-            onClick={handleStartLiveData}
+            onClick={handleRefreshData}
             className="bg-cyan-600 hover:bg-cyan-700"
-            disabled={isLiveMode}
           >
-            <Zap className="h-4 w-4 mr-2" />
-            Start Live Processing
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Feeds
           </Button>
         </div>
       </div>
@@ -106,7 +106,7 @@ const LiveDataDashboard: React.FC = () => {
               <TrendingUp className="h-5 w-5 text-cyan-400" />
               <div>
                 <p className="text-xs text-slate-400">Throughput</p>
-                <p className="text-lg font-bold text-white">{metrics.throughput.toFixed(1)}/s</p>
+                <p className="text-lg font-bold text-white">{metrics.throughput.toFixed(1)}/min</p>
               </div>
             </div>
           </CardContent>
@@ -167,7 +167,7 @@ const LiveDataDashboard: React.FC = () => {
           <CardHeader>
             <CardTitle className="text-white flex items-center">
               <Database className="h-5 w-5 mr-2" />
-              Data Sources
+              Real-Time Data Sources
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -221,6 +221,7 @@ const LiveDataDashboard: React.FC = () => {
                 <div className="text-center py-8 text-slate-400">
                   <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No correlations detected</p>
+                  <p className="text-xs mt-1">Real-time monitoring active</p>
                 </div>
               ) : (
                 correlations.map((correlation) => (
