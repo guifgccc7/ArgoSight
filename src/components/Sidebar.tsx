@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -14,12 +15,14 @@ import {
   AlertTriangle,
   Activity,
   BarChart3,
-  Settings
+  Settings,
+  Zap
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Real-Time Ops", href: "/real-time-operations", icon: Activity },
+  { name: "Enhanced Real-Time", href: "/enhanced-realtime", icon: Zap },
   { name: "Data Fusion", href: "/data-fusion", icon: Database },
   { name: "Ghost Fleet", href: "/ghost-fleet", icon: Ship },
   { name: "Alerts", href: "/alerts", icon: AlertTriangle },

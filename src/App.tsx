@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import RealTimeOperations from "./pages/RealTimeOperations";
+import EnhancedRealTime from "./pages/EnhancedRealTime";
 import DataFusion from "./pages/DataFusion";
 import GhostFleet from "./pages/GhostFleet";
 import Alerts from "./pages/Alerts";
@@ -34,6 +35,7 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/" element={<Index />} />
               <Route path="/real-time-operations" element={<RealTimeOperations />} />
+              <Route path="/enhanced-realtime" element={<EnhancedRealTime />} />
               <Route path="/data-fusion" element={<DataFusion />} />
               <Route path="/ghost-fleet" element={<GhostFleet />} />
               <Route path="/alerts" element={<Alerts />} />
