@@ -7,7 +7,7 @@ export class AlertSimulationService {
   constructor(private addAlert: (alert: Alert) => void) {}
 
   startAlertSimulation(): void {
-    this.simulationInterval = setInterval(() => {
+    this.simulationInterval = window.setInterval(() => {
       if (Math.random() > 0.7) { // 30% chance every 10 seconds
         this.generateRandomAlert();
       }
@@ -16,7 +16,7 @@ export class AlertSimulationService {
 
   stopAlertSimulation(): void {
     if (this.simulationInterval) {
-      clearInterval(this.simulationInterval);
+      window.clearInterval(this.simulationInterval);
       this.simulationInterval = undefined;
     }
   }
