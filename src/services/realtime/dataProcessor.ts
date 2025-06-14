@@ -25,9 +25,10 @@ export class DataProcessor {
         ...data
       });
 
-      // Create fused data object
+      // Create fused data object with guaranteed aisSignalStrength
       const fusedData: FusedVesselData = {
         ...data,
+        aisSignalStrength: data.aisSignalStrength || 1.0, // Provide default value if undefined
         sources: [sourceId],
         confidence: mlAnalysis.confidence,
         reliability: 0.95, // Default reliability
