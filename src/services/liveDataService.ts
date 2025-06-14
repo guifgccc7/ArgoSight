@@ -260,6 +260,36 @@ class LiveDataService {
     return alerts;
   }
 
+  // New: Allow forcing demo data mode via a static variable
+  static demoMode = false;
+
+  setDemoMode(isDemo: boolean): void {
+    LiveDataService.demoMode = isDemo;
+    // Optionally: Clear current state and re-initialize sources
+    if (isDemo) {
+      this.simulateImmediateDemoData();
+    }
+  }
+
+  // Public: Return simulated data immediately for dashboard fallback
+  getImmediateSimulatedData(): LiveDataUpdate {
+    const vessels = this.generateMockVesselData();
+    const alerts = this.generateMockAlerts();
+    const weather = this.generateMockWeatherData();
+    return {
+      vessels,
+      alerts,
+      weather,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // Forcing demo data for immediate state update (used on toggle)
+  private simulateImmediateDemoData(): void {
+    const update = this.getImmediateSimulatedData();
+    this.notifySubscribers(update);
+  }
+
   // Start live data simulation
   startLiveDataFeed(): void {
     if (this.isActive) return;

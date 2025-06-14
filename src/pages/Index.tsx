@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import DemoModeToggle from "@/components/DemoModeToggle";
 import ClimateSecurityPanel from "@/components/ClimateSecurityPanel";
 import MapboxMap from "@/components/maps/MapboxMap";
 import VesselTrackingPanel from "@/components/maps/VesselTrackingPanel";
@@ -17,34 +18,51 @@ const Index = () => {
   const [isLiveDataActive, setIsLiveDataActive] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState<string>('');
   const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  // Listen for demo mode toggle
+  useEffect(() => {
+    liveDataService.setDemoMode(isDemoMode);
+    // When in demo mode, update dashboard with immediate fallback
+    if(isDemoMode) {
+      setLiveData(liveDataService.getImmediateSimulatedData());
+    }
+  }, [isDemoMode]);
 
   useEffect(() => {
-    // Start live data feed
-    liveDataService.startLiveDataFeed();
-    setIsLiveDataActive(true);
+    // Live/demo data feed handling
+    if (!isDemoMode) {
+      liveDataService.startLiveDataFeed();
+      setIsLiveDataActive(true);
 
-    // Subscribe to live data updates
-    const unsubscribe = liveDataService.subscribe((data) => {
-      setLiveData(data);
-      console.log('Dashboard live data update:', data);
-    });
+      const unsubscribe = liveDataService.subscribe((data) => {
+        // If for some reason no data, fallback to simulated (never show empty UI)
+        if (!data?.vessels || data.vessels.length === 0) {
+          setLiveData(liveDataService.getImmediateSimulatedData());
+        } else {
+          setLiveData(data);
+        }
+        console.log('Dashboard live data update:', data);
+      });
 
-    // Subscribe to alerts
-    const unsubscribeAlerts = alertsService.subscribe((alerts) => {
-      setRecentAlerts(alerts.slice(0, 5)); // Show only 5 most recent
-    });
-
-    // Start alerts simulation
-    alertsService.startAlertSimulation();
-
-    // Cleanup
-    return () => {
-      unsubscribe();
-      unsubscribeAlerts();
-      liveDataService.stopLiveDataFeed();
-      setIsLiveDataActive(false);
-    };
-  }, []);
+      const unsubscribeAlerts = alertsService.subscribe((alerts) => {
+        setRecentAlerts(alerts.slice(0, 5));
+      });
+      alertsService.startAlertSimulation();
+      return () => {
+        unsubscribe();
+        unsubscribeAlerts();
+        liveDataService.stopLiveDataFeed();
+        setIsLiveDataActive(false);
+      };
+    } else {
+      // In demo/sim mode, pull and refresh simulated data every 10s
+      const interval = setInterval(() => {
+        setLiveData(liveDataService.getImmediateSimulatedData());
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isDemoMode]);
 
   const vesselCount = liveData?.vessels?.length || 2847;
   const alertCount = recentAlerts.filter(a => a.status === 'new').length;
@@ -109,20 +127,26 @@ const Index = () => {
           <p className="text-slate-400 mt-1">Enterprise-grade maritime intelligence platform</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className={`${isLiveDataActive ? 'text-green-400 border-green-400' : 'text-slate-400 border-slate-400'}`}>
-            {isLiveDataActive ? (
-              <>
-                <Activity className="h-3 w-3 mr-1" />
-                LIVE DATA
-              </>
-            ) : 'OFFLINE'}
+          <DemoModeToggle isDemoMode={isDemoMode} onChange={setIsDemoMode} />
+          <Badge variant="outline" className={`${isLiveDataActive && !isDemoMode ? 'text-green-400 border-green-400' : 'text-slate-400 border-slate-400'}`}>
+            {isDemoMode
+              ? (
+                <>
+                  <Zap className="h-3 w-3 mr-1 text-yellow-400" />
+                  SIMULATED
+                </>
+              ) : isLiveDataActive
+                ? (
+                  <>
+                    <Activity className="h-3 w-3 mr-1" />
+                    LIVE DATA
+                  </>
+                )
+                : 'OFFLINE'
+            }
           </Badge>
-          <Badge variant="outline" className="text-green-400 border-green-400">
-            ENTERPRISE
-          </Badge>
-          <Badge variant="outline" className="text-cyan-400 border-cyan-400">
-            OPERATIONAL
-          </Badge>
+          <Badge variant="outline" className="text-green-400 border-green-400">ENTERPRISE</Badge>
+          <Badge variant="outline" className="text-cyan-400 border-cyan-400">OPERATIONAL</Badge>
         </div>
       </div>
 
