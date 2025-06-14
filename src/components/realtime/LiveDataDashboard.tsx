@@ -14,12 +14,18 @@ import ProcessingMetricsPanel from './ProcessingMetricsPanel';
 import DataSourcesPanel from './DataSourcesPanel';
 import AlertCorrelationsPanel from './AlertCorrelationsPanel';
 import { liveDataService } from "@/services/liveDataService";
+import { useDemoMode } from '@/components/DemoModeProvider';
 
 interface LiveDataDashboardProps {
   isDemoMode?: boolean; // If not provided, defaults to false (live)
 }
 
-const LiveDataDashboard: React.FC<LiveDataDashboardProps> = ({ isDemoMode = false }) => {
+const LiveDataDashboard: React.FC<LiveDataDashboardProps> = ({ isDemoMode: propIsDemoMode }) => {
+  const { isDemoMode: globalDemoMode } = useDemoMode();
+  
+  // Use prop demo mode if provided, otherwise use global demo mode
+  const isDemoMode = propIsDemoMode !== undefined ? propIsDemoMode : globalDemoMode;
+  
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [metrics, setMetrics] = useState<ProcessingMetrics>({
     throughput: 0,

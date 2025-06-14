@@ -2,6 +2,7 @@
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import GlobalDemoModeToggle from "./GlobalDemoModeToggle";
 
 const Layout = () => {
   return (
@@ -10,6 +11,9 @@ const Layout = () => {
       <div className="flex">
         <Sidebar />
         <main className="flex-1 ml-64 p-6">
+          <div className="mb-6 flex justify-end">
+            <GlobalDemoModeToggle />
+          </div>
           <Outlet />
         </main>
       </div>

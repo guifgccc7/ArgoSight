@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import OrganizationSelector from "@/components/auth/OrganizationSelector";
+import AuthErrorHandler from "@/components/auth/AuthErrorHandler";
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -38,6 +40,11 @@ const Auth = () => {
       setLocalError(error);
     }
   }, [error]);
+
+  const handleClearError = () => {
+    setLocalError('');
+    clearError();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,13 +281,10 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
               
-              {(localError || error) && (
-                <Alert className="mt-4 border-red-500 bg-red-500/10">
-                  <AlertDescription className="text-red-400">
-                    {localError || error}
-                  </AlertDescription>
-                </Alert>
-              )}
+              <AuthErrorHandler 
+                error={localError || error} 
+                onClearError={handleClearError} 
+              />
               
               {message && (
                 <Alert className="mt-4 border-green-500 bg-green-500/10">

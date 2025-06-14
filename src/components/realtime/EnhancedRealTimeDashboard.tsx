@@ -16,12 +16,11 @@ import {
 import DataFeedController from './DataFeedController';
 import LiveDataDashboard from './LiveDataDashboard';
 import { supabase } from '@/integrations/supabase/client';
-import DemoModeToggle from '@/components/DemoModeToggle';
+import { useDemoMode } from '@/components/DemoModeProvider';
 import { liveDataService } from "@/services/liveDataService";
 
 const EnhancedRealTimeDashboard: React.FC = () => {
-  // Demo Mode state
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const { isDemoMode } = useDemoMode();
 
   // Main stats
   const [liveStats, setLiveStats] = useState({
@@ -102,7 +101,6 @@ const EnhancedRealTimeDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <h2 className="text-3xl font-bold text-white">Enhanced Real-Time Operations</h2>
-          <DemoModeToggle isDemoMode={isDemoMode} onChange={setIsDemoMode} />
         </div>
         <div className="flex items-center space-x-2">
           <div className={`w-2 h-2 rounded-full ${isDemoMode ? "bg-yellow-400 animate-pulse" : "bg-green-400 animate-pulse"}`}></div>
@@ -181,7 +179,7 @@ const EnhancedRealTimeDashboard: React.FC = () => {
           <DataFeedController />
         </TabsContent>
         <TabsContent value="processing">
-          <LiveDataDashboard />
+          <LiveDataDashboard isDemoMode={isDemoMode} />
         </TabsContent>
         <TabsContent value="analytics">
           <Card className="bg-slate-800 border-slate-700">
