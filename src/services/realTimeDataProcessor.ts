@@ -2,6 +2,7 @@
 import { mlAnalysisService, VesselDataPoint } from './mlAnalysisService';
 import { enhancedPatternService } from './enhancedPatternService';
 import { alertsService } from './alertsService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DataSource {
   id: string;
@@ -46,13 +47,14 @@ class RealTimeDataProcessor {
     this.initializeDataSources();
     this.startProcessing();
     this.startMetricsCollection();
+    this.startRealTimeDataListener();
   }
 
   private initializeDataSources() {
     const sources: DataSource[] = [
       {
-        id: 'live-ais',
-        name: 'Live AIS Feed',
+        id: 'aisstream',
+        name: 'AISStream Live Feed',
         type: 'ais',
         status: 'active',
         reliability: 0.95,
@@ -60,37 +62,54 @@ class RealTimeDataProcessor {
         latency: 150
       },
       {
-        id: 'satellite-feed',
-        name: 'Satellite Data Stream',
-        type: 'satellite',
+        id: 'openweather',
+        name: 'OpenWeather Marine',
+        type: 'weather',
         status: 'active',
         reliability: 0.88,
         lastUpdate: new Date().toISOString(),
         latency: 300
-      },
-      {
-        id: 'coastal-radar',
-        name: 'Coastal Radar Network',
-        type: 'radar',
-        status: 'active',
-        reliability: 0.92,
-        lastUpdate: new Date().toISOString(),
-        latency: 80
-      },
-      {
-        id: 'weather-data',
-        name: 'Weather Intelligence',
-        type: 'weather',
-        status: 'active',
-        reliability: 0.85,
-        lastUpdate: new Date().toISOString(),
-        latency: 200
       }
     ];
 
     sources.forEach(source => {
       this.dataSources.set(source.id, source);
     });
+  }
+
+  private startRealTimeDataListener(): void {
+    // Listen to real-time vessel position updates
+    const channel = supabase
+      .channel('vessel_positions_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'vessel_positions'
+        },
+        (payload) => {
+          console.log('Real-time vessel position received:', payload);
+          this.processRealVesselData(payload.new);
+        }
+      )
+      .subscribe();
+
+    console.log('Started listening for real-time vessel position updates');
+  }
+
+  private async processRealVesselData(position: any): Promise<void> {
+    const vesselData: VesselDataPoint = {
+      speed: position.speed_knots || 0,
+      course: position.course_degrees || 0,
+      lat: position.latitude,
+      lng: position.longitude,
+      vesselType: 'unknown',
+      timestamp: position.timestamp_utc,
+      aisSignalStrength: position.data_quality_score || 1.0
+    };
+
+    await this.processVesselData(vesselData, position.source_feed || 'aisstream');
   }
 
   async processVesselData(data: VesselDataPoint, sourceId: string): Promise<void> {
@@ -182,7 +201,7 @@ class RealTimeDataProcessor {
         // Process queue in batches
         const batch = this.processingQueue.splice(0, 10);
         Promise.all(
-          batch.map(data => this.processVesselData(data, 'live-ais'))
+          batch.map(data => this.processVesselData(data, 'realtime'))
         ).finally(() => {
           this.isProcessing = false;
         });
@@ -191,20 +210,40 @@ class RealTimeDataProcessor {
   }
 
   private startMetricsCollection(): void {
-    setInterval(() => {
-      this.collectMetrics();
+    setInterval(async () => {
+      await this.collectRealMetrics();
       this.notifyMetricsSubscribers();
     }, 5000);
   }
 
-  private collectMetrics(): void {
-    this.metrics.activeConnections = this.dataSources.size;
-    this.metrics.queueSize = this.processingQueue.length;
-    
-    // Simulate realistic metrics
-    this.metrics.throughput = 25 + Math.random() * 10;
-    this.metrics.latency = 150 + Math.random() * 100;
-    this.metrics.errorRate = Math.random() * 2;
+  private async collectRealMetrics(): Promise<void> {
+    try {
+      // Get real metrics from database
+      const { data: recentPositions } = await supabase
+        .from('vessel_positions')
+        .select('*')
+        .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last minute
+
+      const { data: recentErrors } = await supabase
+        .from('api_integration_logs')
+        .select('*')
+        .gte('timestamp_utc', new Date(Date.now() - 60000).toISOString())
+        .gte('status_code', 400);
+
+      this.metrics.throughput = recentPositions?.length || 0;
+      this.metrics.errorRate = recentErrors?.length || 0;
+      this.metrics.activeConnections = this.dataSources.size;
+      this.metrics.queueSize = this.processingQueue.length;
+
+      // Update data source statuses
+      for (const [id, source] of this.dataSources) {
+        source.lastUpdate = new Date().toISOString();
+        source.status = 'active';
+      }
+
+    } catch (error) {
+      console.error('Error collecting real metrics:', error);
+    }
   }
 
   private updateLatency(latency: number): void {
@@ -212,11 +251,11 @@ class RealTimeDataProcessor {
   }
 
   private updateThroughput(): void {
-    this.metrics.throughput = Math.max(0, this.metrics.throughput + (Math.random() - 0.5));
+    // Throughput is calculated from real data in collectRealMetrics
   }
 
   private updateErrorRate(): void {
-    this.metrics.errorRate = Math.min(10, this.metrics.errorRate + 0.1);
+    // Error rate is calculated from real data in collectRealMetrics
   }
 
   private updateMetrics(key: keyof ProcessingMetrics, value: number): void {
@@ -250,21 +289,7 @@ class RealTimeDataProcessor {
     return { ...this.metrics };
   }
 
-  simulateLiveData(): void {
-    setInterval(() => {
-      const mockVessel: VesselDataPoint = {
-        speed: Math.random() * 30,
-        course: Math.random() * 360,
-        lat: 40 + (Math.random() - 0.5) * 20,
-        lng: -70 + (Math.random() - 0.5) * 40,
-        vesselType: ['cargo', 'tanker', 'fishing', 'container'][Math.floor(Math.random() * 4)],
-        timestamp: new Date().toISOString(),
-        aisSignalStrength: Math.random()
-      };
-
-      this.processVesselData(mockVessel, 'live-ais');
-    }, 3000);
-  }
+  // REMOVED: simulateLiveData method - we only use real data now
 }
 
 export const realTimeDataProcessor = new RealTimeDataProcessor();

@@ -1,5 +1,3 @@
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -7,75 +5,96 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface AISMessage {
-  MessageType: string
-  MetaData: {
-    MMSI: number
-    ShipName: string
-    latitude: number
-    longitude: number
-    time_utc: string
-  }
-  Message: {
-    PositionReport?: {
-      Cog: number
-      NavigationStatus: number
-      Latitude: number
-      Longitude: number
-      RateOfTurn: number
-      Sog: number
-      TrueHeading: number
-      Timestamp: number
-      Valid: boolean
-    }
-  }
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const aisStreamApiKey = Deno.env.get('AISSTREAM_API_KEY')!
 
-    const aisStreamApiKey = Deno.env.get('AISSTREAM_API_KEY')
     if (!aisStreamApiKey) {
       throw new Error('AISSTREAM_API_KEY not configured')
     }
 
-    // Connect to AISStream WebSocket
-    const ws = new WebSocket("wss://stream.aisstream.io/v0/stream")
-    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    console.log('Starting AISStream WebSocket connection...')
+
+    // Create WebSocket connection to AISStream
+    const ws = new WebSocket('wss://stream.aisstream.io/v0/stream')
+
+    // Authentication message for AISStream
+    const authMessage = {
+      APIKey: aisStreamApiKey,
+      BoundingBoxes: [
+        [[-90, -180], [90, 180]] // Global coverage
+      ],
+      FiltersShipAndCargo: false,
+      FilterMessageTypes: ["PositionReport"]
+    }
+
     ws.onopen = () => {
-      console.log('Connected to AISStream')
-      
-      // Subscribe to specific areas or all messages
-      const subscriptionMessage = {
-        APIKey: aisStreamApiKey,
-        BoundingBoxes: [
-          // North Atlantic
-          [[40, -80], [70, -10]],
-          // Mediterranean 
-          [[30, -10], [45, 40]],
-          // Arctic routes
-          [[60, -180], [85, 180]]
-        ],
-        FilterMessageTypes: ["PositionReport"]
-      }
-      
-      ws.send(JSON.stringify(subscriptionMessage))
+      console.log('WebSocket connection opened')
+      ws.send(JSON.stringify(authMessage))
     }
 
     ws.onmessage = async (event) => {
       try {
-        const aisData: AISMessage = JSON.parse(event.data)
+        // Handle both string and blob data
+        let messageData: string
+        if (event.data instanceof Blob) {
+          messageData = await event.data.text()
+        } else {
+          messageData = event.data
+        }
+
+        const aisMessage = JSON.parse(messageData)
         
-        if (aisData.MessageType === "PositionReport" && aisData.MetaData) {
-          await processVesselPosition(supabaseClient, aisData)
+        if (aisMessage.MessageType === "PositionReport") {
+          const vessel = aisMessage.Message.PositionReport
+          
+          // Insert or update vessel
+          const { data: vesselData, error: vesselError } = await supabase
+            .from('vessels')
+            .upsert({
+              mmsi: vessel.UserID.toString(),
+              vessel_name: vessel.ShipName || `Vessel-${vessel.UserID}`,
+              vessel_type: vessel.ShipAndCargoType || 'Unknown',
+              status: 'active'
+            }, { onConflict: 'mmsi' })
+            .select()
+            .single()
+
+          if (vesselError) {
+            console.error('Error upserting vessel:', vesselError)
+            return
+          }
+
+          // Insert position
+          const { error: positionError } = await supabase
+            .from('vessel_positions')
+            .insert({
+              vessel_id: vesselData.id,
+              mmsi: vessel.UserID.toString(),
+              latitude: vessel.Latitude,
+              longitude: vessel.Longitude,
+              speed_knots: vessel.Sog,
+              course_degrees: vessel.Cog,
+              heading_degrees: vessel.TrueHeading,
+              navigation_status: vessel.NavigationalStatus,
+              timestamp_utc: new Date().toISOString(),
+              source_feed: 'aisstream',
+              data_quality_score: 1.0
+            })
+
+          if (positionError) {
+            console.error('Error inserting position:', positionError)
+          } else {
+            console.log(`Processed vessel ${vessel.UserID} at ${vessel.Latitude}, ${vessel.Longitude}`)
+          }
         }
       } catch (error) {
         console.error('Error processing AIS message:', error)
@@ -83,89 +102,40 @@ serve(async (req) => {
     }
 
     ws.onerror = (error) => {
-      console.error('AISStream WebSocket error:', error)
+      console.error('WebSocket error:', error)
     }
 
-    ws.onclose = () => {
-      console.log('AISStream connection closed')
+    ws.onclose = (event) => {
+      console.log('WebSocket connection closed:', event.code, event.reason)
     }
 
-    return new Response(JSON.stringify({ status: 'AISStream integration started' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Keep the function running for 5 minutes to collect data
+    setTimeout(() => {
+      ws.close()
+    }, 5 * 60 * 1000)
+
+    return new Response(
+      JSON.stringify({ 
+        message: 'AISStream integration started',
+        status: 'success'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
 
   } catch (error) {
     console.error('Error in AISStream integration:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        status: 'error'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
   }
 })
-
-async function processVesselPosition(supabase: any, aisData: AISMessage) {
-  const { MetaData, Message } = aisData
-  
-  if (!Message.PositionReport || !MetaData) return
-
-  try {
-    // Store or update vessel information
-    const { data: vessel, error: vesselError } = await supabase
-      .from('vessels')
-      .upsert({
-        mmsi: MetaData.MMSI.toString(),
-        vessel_name: MetaData.ShipName || `Vessel-${MetaData.MMSI}`,
-        vessel_type: 'unknown', // AISStream doesn't always provide type in position reports
-        status: 'active'
-      }, { onConflict: 'mmsi' })
-      .select()
-      .single()
-
-    if (vesselError) {
-      console.error('Error storing vessel:', vesselError)
-      return
-    }
-
-    // Store position data
-    const { error: positionError } = await supabase
-      .from('vessel_positions')
-      .insert({
-        vessel_id: vessel.id,
-        mmsi: MetaData.MMSI.toString(),
-        latitude: Message.PositionReport.Latitude,
-        longitude: Message.PositionReport.Longitude,
-        speed_knots: Message.PositionReport.Sog,
-        course_degrees: Message.PositionReport.Cog,
-        heading_degrees: Message.PositionReport.TrueHeading,
-        navigation_status: getNavigationStatusText(Message.PositionReport.NavigationStatus),
-        timestamp_utc: new Date(Message.PositionReport.Timestamp * 1000).toISOString(),
-        source_feed: 'aisstream',
-        data_quality_score: Message.PositionReport.Valid ? 1.0 : 0.5
-      })
-
-    if (positionError) {
-      console.error('Error storing position:', positionError)
-    } else {
-      console.log(`Stored position for vessel ${MetaData.MMSI}`)
-    }
-
-  } catch (error) {
-    console.error('Error processing vessel position:', error)
-  }
-}
-
-function getNavigationStatusText(status: number): string {
-  const statusMap: { [key: number]: string } = {
-    0: 'Under way using engine',
-    1: 'At anchor',
-    2: 'Not under command',
-    3: 'Restricted manoeuvrability',
-    4: 'Constrained by her draught',
-    5: 'Moored',
-    6: 'Aground',
-    7: 'Engaged in fishing',
-    8: 'Under way sailing',
-    15: 'Undefined'
-  }
-  return statusMap[status] || 'Unknown'
-}
