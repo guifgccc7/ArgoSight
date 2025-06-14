@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./hooks/useAuth";
+import { DemoModeProvider } from "./components/DemoModeProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
@@ -30,27 +31,29 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/real-time-operations" element={<RealTimeOperations />} />
-              <Route path="/enhanced-realtime" element={<EnhancedRealTime />} />
-              <Route path="/data-fusion" element={<DataFusion />} />
-              <Route path="/ghost-fleet" element={<GhostFleet />} />
-              <Route path="/alerts" element={<Alerts />} />
-              <Route path="/satellite-imagery" element={<SatelliteImagery />} />
-              <Route path="/arctic-routes" element={<ArcticRoutes />} />
-              <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
-              <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
-              <Route path="/climate-intel" element={<ClimateIntel />} />
-              <Route path="/intelligence-db" element={<IntelligenceDB />} />
-              <Route path="/integrated-intel" element={<IntegratedIntel />} />
-              <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
-              <Route path="/production-admin" element={<ProductionAdmin />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <DemoModeProvider>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/" element={<Index />} />
+                <Route path="/real-time-operations" element={<RealTimeOperations />} />
+                <Route path="/enhanced-realtime" element={<EnhancedRealTime />} />
+                <Route path="/data-fusion" element={<DataFusion />} />
+                <Route path="/ghost-fleet" element={<GhostFleet />} />
+                <Route path="/alerts" element={<Alerts />} />
+                <Route path="/satellite-imagery" element={<SatelliteImagery />} />
+                <Route path="/arctic-routes" element={<ArcticRoutes />} />
+                <Route path="/arctic-cost-savings" element={<ArcticCostSavings />} />
+                <Route path="/mediterranean-routes" element={<MediterraneanRoutes />} />
+                <Route path="/climate-intel" element={<ClimateIntel />} />
+                <Route path="/intelligence-db" element={<IntelligenceDB />} />
+                <Route path="/integrated-intel" element={<IntegratedIntel />} />
+                <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
+                <Route path="/production-admin" element={<ProductionAdmin />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </DemoModeProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
