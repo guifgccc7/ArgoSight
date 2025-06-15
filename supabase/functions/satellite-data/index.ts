@@ -19,20 +19,66 @@ serve(async (req) => {
     const { bbox, startDate, endDate, cloudCover = 0.1 } = await req.json();
     
     if (!bbox || !bbox.coordinates) {
-      return new Response(JSON.stringify({ error: 'Bounding box coordinates are required' }), {
+      console.error('Missing required bbox coordinates');
+      return new Response(JSON.stringify({ 
+        error: 'Bounding box coordinates are required',
+        required_format: {
+          bbox: {
+            coordinates: [[[west, south], [east, south], [east, north], [west, north], [west, south]]]
+          }
+        }
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!planetApiKey) {
-      return new Response(JSON.stringify({ error: 'Planet Labs API key not configured' }), {
-        status: 500,
+      console.error('Planet Labs API key not configured');
+      
+      // Return mock data when API key is not configured
+      const mockImages = Array.from({ length: 3 }, (_, i) => ({
+        satellite_name: `MockSat-${i + 1}`,
+        image_url: `https://example.com/satellite/mock-${i + 1}.tiff`,
+        thumbnail_url: `https://example.com/satellite/mock-${i + 1}-thumb.jpg`,
+        scene_id: `MOCK_${Date.now()}_${i}`,
+        acquisition_time: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        cloud_cover_percentage: Math.random() * 30,
+        resolution_meters: 3.0,
+        bbox_north: bbox.coordinates[0][2][1],
+        bbox_south: bbox.coordinates[0][0][1],
+        bbox_east: bbox.coordinates[0][1][0],
+        bbox_west: bbox.coordinates[0][0][0],
+        file_size_mb: 100 + Math.random() * 200,
+        processing_level: 'L3B',
+        provider: 'Mock Provider (API Key Required)',
+        metadata: {
+          sun_azimuth: Math.random() * 360,
+          sun_elevation: 30 + Math.random() * 60,
+          view_angle: Math.random() * 45,
+          quality_category: 'demo'
+        }
+      }));
+
+      return new Response(JSON.stringify({
+        images: mockImages,
+        total_count: mockImages.length,
+        api_status: 'mock_data',
+        message: 'Planet Labs API key not configured. Returning mock data. Please add PLANET_API_KEY to your Supabase secrets.',
+        search_parameters: {
+          bbox,
+          date_range: {
+            start: startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            end: endDate || new Date().toISOString()
+          },
+          max_cloud_cover: cloudCover
+        }
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Fetching satellite data for bbox: ${JSON.stringify(bbox)}`);
+    console.log(`Searching satellite images for bbox: ${JSON.stringify(bbox)}`);
 
     // Search for satellite images using Planet Labs API
     const searchRequest = {
@@ -78,10 +124,12 @@ serve(async (req) => {
     });
     
     if (!searchResponse.ok) {
-      console.error(`Planet Labs API error: ${searchResponse.status} ${searchResponse.statusText}`);
+      const errorText = await searchResponse.text();
+      console.error(`Planet Labs API error: ${searchResponse.status} ${searchResponse.statusText} - ${errorText}`);
       return new Response(JSON.stringify({ 
         error: `Satellite API error: ${searchResponse.status}`,
-        details: searchResponse.statusText
+        details: searchResponse.statusText,
+        api_response: errorText
       }), {
         status: searchResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -118,6 +166,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       images: satelliteImages,
       total_count: searchData.features?.length || 0,
+      api_status: 'success',
       search_parameters: {
         bbox,
         date_range: {
@@ -133,7 +182,8 @@ serve(async (req) => {
     console.error('Error in satellite-data function:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

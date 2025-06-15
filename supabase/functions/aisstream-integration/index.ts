@@ -16,7 +16,17 @@ Deno.serve(async (req) => {
     const aisStreamApiKey = Deno.env.get('AISSTREAM_API_KEY')!
 
     if (!aisStreamApiKey) {
-      throw new Error('AISSTREAM_API_KEY not configured')
+      console.error('AISSTREAM_API_KEY not configured')
+      return new Response(
+        JSON.stringify({ 
+          error: 'AISSTREAM_API_KEY not configured',
+          status: 'error'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -36,8 +46,11 @@ Deno.serve(async (req) => {
       FilterMessageTypes: ["PositionReport"]
     }
 
+    let processedCount = 0
+    let errorCount = 0
+
     ws.onopen = () => {
-      console.log('WebSocket connection opened')
+      console.log('WebSocket connection opened successfully')
       ws.send(JSON.stringify(authMessage))
     }
 
@@ -70,6 +83,7 @@ Deno.serve(async (req) => {
 
           if (vesselError) {
             console.error('Error upserting vessel:', vesselError)
+            errorCount++
             return
           }
 
@@ -92,12 +106,15 @@ Deno.serve(async (req) => {
 
           if (positionError) {
             console.error('Error inserting position:', positionError)
+            errorCount++
           } else {
-            console.log(`Processed vessel ${vessel.UserID} at ${vessel.Latitude}, ${vessel.Longitude}`)
+            processedCount++
+            console.log(`Processed vessel ${vessel.UserID} at ${vessel.Latitude}, ${vessel.Longitude} (Total: ${processedCount})`)
           }
         }
       } catch (error) {
         console.error('Error processing AIS message:', error)
+        errorCount++
       }
     }
 
@@ -106,18 +123,24 @@ Deno.serve(async (req) => {
     }
 
     ws.onclose = (event) => {
-      console.log('WebSocket connection closed:', event.code, event.reason)
+      console.log(`WebSocket connection closed: ${event.code} ${event.reason}`)
+      console.log(`Session summary - Processed: ${processedCount}, Errors: ${errorCount}`)
     }
 
     // Keep the function running for 5 minutes to collect data
     setTimeout(() => {
+      console.log(`Closing WebSocket after 5 minutes. Final stats - Processed: ${processedCount}, Errors: ${errorCount}`)
       ws.close()
     }, 5 * 60 * 1000)
 
     return new Response(
       JSON.stringify({ 
-        message: 'AISStream integration started',
-        status: 'success'
+        message: 'AISStream integration started successfully',
+        status: 'success',
+        session_info: {
+          duration_minutes: 5,
+          api_key_configured: !!aisStreamApiKey
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -130,7 +153,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        status: 'error'
+        status: 'error',
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

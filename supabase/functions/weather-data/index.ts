@@ -19,30 +19,40 @@ serve(async (req) => {
     const { lat, lng } = await req.json();
     
     if (!lat || !lng) {
-      return new Response(JSON.stringify({ error: 'Latitude and longitude are required' }), {
+      console.error('Missing required parameters: lat, lng');
+      return new Response(JSON.stringify({ 
+        error: 'Latitude and longitude are required',
+        received: { lat, lng }
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (!openWeatherApiKey) {
-      return new Response(JSON.stringify({ error: 'OpenWeather API key not configured' }), {
+      console.error('OpenWeather API key not configured');
+      return new Response(JSON.stringify({ 
+        error: 'OpenWeather API key not configured. Please add OPENWEATHER_API_KEY to your Supabase secrets.',
+        configuration_required: true
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Fetching weather data for lat: ${lat}, lng: ${lng}`);
+    console.log(`Fetching weather data for coordinates: ${lat}, ${lng}`);
 
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${openWeatherApiKey}&units=metric`
-    );
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${openWeatherApiKey}&units=metric`;
+    
+    const response = await fetch(weatherUrl);
     
     if (!response.ok) {
-      console.error(`OpenWeather API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`OpenWeather API error: ${response.status} ${response.statusText} - ${errorText}`);
       return new Response(JSON.stringify({ 
         error: `Weather API error: ${response.status}`,
-        details: response.statusText
+        details: response.statusText,
+        api_response: errorText
       }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -50,16 +60,28 @@ serve(async (req) => {
     }
     
     const weatherData = await response.json();
-    console.log('Weather data fetched successfully:', weatherData.name);
+    console.log(`Weather data fetched successfully: ${weatherData.name || 'Unknown location'}`);
 
-    return new Response(JSON.stringify(weatherData), {
+    // Enhanced response with additional metadata
+    const enhancedResponse = {
+      ...weatherData,
+      api_metadata: {
+        fetched_at: new Date().toISOString(),
+        coordinates: { lat, lng },
+        api_provider: 'OpenWeatherMap',
+        status: 'success'
+      }
+    };
+
+    return new Response(JSON.stringify(enhancedResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in weather-data function:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
