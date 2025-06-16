@@ -15,16 +15,26 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface WeatherData {
-  latitude: number;
-  longitude: number;
-  timestamp_utc: string;
-  temperature_celsius: number | null;
-  wind_speed_knots: number | null;
-  wind_direction_degrees: number | null;
-  visibility_km: number | null;
-  weather_conditions: string | null;
-  barometric_pressure: number | null;
+interface WeatherApiResponse {
+  coord?: { lat: number; lon: number };
+  weather?: Array<{ main: string; description: string; icon: string }>;
+  main?: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    pressure: number;
+    humidity: number;
+  };
+  visibility?: number;
+  wind?: {
+    speed: number;
+    deg: number;
+    gust?: number;
+  };
+  clouds?: { all: number };
+  sys?: { country: string };
+  name?: string;
   api_metadata?: {
     fetched_at: string;
     coordinates: { lat: number; lng: number };
@@ -34,9 +44,8 @@ interface WeatherData {
 }
 
 const WeatherImageDisplay: React.FC = () => {
-  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
+  const [weatherData, setWeatherData] = useState<WeatherApiResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<WeatherData | null>(null);
 
   const testLocations = [
     { lat: 51.5074, lng: -0.1278, name: 'London, UK' },
@@ -85,30 +94,35 @@ const WeatherImageDisplay: React.FC = () => {
     toast.success(`Fetched weather data for ${weatherResults.length} locations`);
   };
 
-  const formatTemperature = (temp: number | null) => {
-    if (temp === null) return 'N/A';
+  const formatTemperature = (temp?: number) => {
+    if (temp === null || temp === undefined) return 'N/A';
     return `${temp.toFixed(1)}°C`;
   };
 
-  const formatWindSpeed = (speed: number | null) => {
-    if (speed === null) return 'N/A';
-    return `${speed.toFixed(1)} knots`;
+  const formatWindSpeed = (speed?: number) => {
+    if (speed === null || speed === undefined) return 'N/A';
+    return `${speed.toFixed(1)} m/s`;
   };
 
-  const formatPressure = (pressure: number | null) => {
-    if (pressure === null) return 'N/A';
+  const formatPressure = (pressure?: number) => {
+    if (pressure === null || pressure === undefined) return 'N/A';
     return `${pressure} hPa`;
   };
 
-  const getWindDirection = (degrees: number | null) => {
-    if (degrees === null) return 'N/A';
+  const formatVisibility = (visibility?: number) => {
+    if (visibility === null || visibility === undefined) return 'N/A';
+    return `${(visibility / 1000).toFixed(1)} km`;
+  };
+
+  const getWindDirection = (degrees?: number) => {
+    if (degrees === null || degrees === undefined) return 'N/A';
     const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
     const index = Math.round(degrees / 22.5) % 16;
     return `${directions[index]} (${degrees.toFixed(0)}°)`;
   };
 
-  const getTemperatureColor = (temp: number | null) => {
-    if (temp === null) return 'text-slate-400';
+  const getTemperatureColor = (temp?: number) => {
+    if (temp === null || temp === undefined) return 'text-slate-400';
     if (temp < 0) return 'text-blue-400';
     if (temp < 10) return 'text-cyan-400';
     if (temp < 20) return 'text-green-400';
@@ -149,7 +163,7 @@ const WeatherImageDisplay: React.FC = () => {
             <Card key={index} className="bg-slate-800 border-slate-700 hover:border-cyan-500 transition-colors cursor-pointer">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm text-white flex items-center justify-between">
-                  <span>{(weather as any).locationName}</span>
+                  <span>{(weather as any).locationName || weather.name || 'Unknown Location'}</span>
                   <Badge variant="outline" className="text-xs">
                     Live
                   </Badge>
@@ -162,8 +176,8 @@ const WeatherImageDisplay: React.FC = () => {
                     <Thermometer className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-slate-300">Temperature</span>
                   </div>
-                  <span className={`text-sm font-semibold ${getTemperatureColor(weather.temperature_celsius)}`}>
-                    {formatTemperature(weather.temperature_celsius)}
+                  <span className={`text-sm font-semibold ${getTemperatureColor(weather.main?.temp)}`}>
+                    {formatTemperature(weather.main?.temp)}
                   </span>
                 </div>
 
@@ -175,10 +189,10 @@ const WeatherImageDisplay: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-semibold text-cyan-400">
-                      {formatWindSpeed(weather.wind_speed_knots)}
+                      {formatWindSpeed(weather.wind?.speed)}
                     </div>
                     <div className="text-xs text-slate-400">
-                      {getWindDirection(weather.wind_direction_degrees)}
+                      {getWindDirection(weather.wind?.deg)}
                     </div>
                   </div>
                 </div>
@@ -190,26 +204,28 @@ const WeatherImageDisplay: React.FC = () => {
                     <span className="text-sm text-slate-300">Visibility</span>
                   </div>
                   <span className="text-sm font-semibold text-green-400">
-                    {weather.visibility_km ? `${weather.visibility_km} km` : 'N/A'}
+                    {formatVisibility(weather.visibility)}
                   </span>
                 </div>
 
                 {/* Conditions */}
-                {weather.weather_conditions && (
+                {weather.weather && weather.weather[0] && (
                   <div className="pt-2 border-t border-slate-700">
                     <p className="text-xs text-slate-300 capitalize">
-                      {weather.weather_conditions}
+                      {weather.weather[0].description}
                     </p>
                   </div>
                 )}
 
                 {/* Coordinates */}
-                <div className="pt-2 border-t border-slate-700">
-                  <div className="flex items-center space-x-1 text-xs text-slate-400">
-                    <MapPin className="h-3 w-3" />
-                    <span>{weather.latitude.toFixed(3)}, {weather.longitude.toFixed(3)}</span>
+                {weather.coord && (
+                  <div className="pt-2 border-t border-slate-700">
+                    <div className="flex items-center space-x-1 text-xs text-slate-400">
+                      <MapPin className="h-3 w-3" />
+                      <span>{weather.coord.lat.toFixed(3)}, {weather.coord.lon.toFixed(3)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Timestamp */}
                 {weather.api_metadata?.fetched_at && (
