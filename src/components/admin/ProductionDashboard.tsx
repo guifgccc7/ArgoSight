@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +43,25 @@ const ProductionDashboard: React.FC = () => {
   const checkConfiguredSecrets = async () => {
     const secrets = [];
     
-    // Test each API by making a simple call to see if secrets are configured
+    try {
+      // Check AISStream integration - look for recent vessel positions from aisstream
+      const { data: recentAisData } = await supabase
+        .from('vessel_positions')
+        .select('id')
+        .eq('source_feed', 'aisstream')
+        .gte('timestamp_utc', new Date(Date.now() - 300000).toISOString()) // Last 5 minutes
+        .limit(1);
+
+      if (recentAisData && recentAisData.length > 0) {
+        secrets.push('AISSTREAM_API_KEY');
+        console.log('✅ AISStream API key is working - found recent data');
+      } else {
+        console.log('⚠️ No recent AISStream data found');
+      }
+    } catch (e) {
+      console.error('Error checking AISStream data:', e);
+    }
+
     try {
       // Test weather API
       const { error: weatherError } = await supabase.functions.invoke('weather-data', {
@@ -52,19 +69,10 @@ const ProductionDashboard: React.FC = () => {
       });
       if (!weatherError || !weatherError.message?.includes('API key')) {
         secrets.push('OPENWEATHER_API_KEY');
+        console.log('✅ OpenWeather API key is working');
       }
     } catch (e) {
-      // If function exists but fails differently, key might be configured
-    }
-
-    try {
-      // Test AIS Stream
-      const { error: aisError } = await supabase.functions.invoke('aisstream-integration');
-      if (!aisError || !aisError.message?.includes('API key')) {
-        secrets.push('AISSTREAM_API_KEY');
-      }
-    } catch (e) {
-      // If function exists but fails differently, key might be configured
+      console.log('⚠️ OpenWeather API key not working or not configured');
     }
 
     try {
@@ -74,11 +82,13 @@ const ProductionDashboard: React.FC = () => {
       });
       if (!satError || !satError.message?.includes('API key')) {
         secrets.push('PLANET_API_KEY');
+        console.log('✅ Planet API key is working');
       }
     } catch (e) {
-      // If function exists but fails differently, key might be configured
+      console.log('⚠️ Planet API key not working or not configured');
     }
 
+    console.log('📊 Configured API keys:', secrets);
     setConfiguredSecrets(secrets);
   };
 

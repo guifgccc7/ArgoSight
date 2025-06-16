@@ -1,4 +1,3 @@
-
 interface ProductionConfig {
   mapbox: {
     accessToken: string;
@@ -83,15 +82,9 @@ class ProductionConfigService {
   getRequiredAPIKeys(): { name: string; description: string; url: string; required: boolean }[] {
     return [
       {
-        name: 'MAPBOX_ACCESS_TOKEN',
-        description: 'Mapbox API key for map rendering and geocoding',
-        url: 'https://account.mapbox.com/access-tokens/',
-        required: true
-      },
-      {
-        name: 'MARINETRAFFIC_API_KEY',
-        description: 'MarineTraffic API key for AIS data',
-        url: 'https://www.marinetraffic.com/en/ais-api-services',
+        name: 'AISSTREAM_API_KEY',
+        description: 'AISStream API key for real-time vessel tracking data',
+        url: 'https://aisstream.io/',
         required: true
       },
       {
@@ -101,15 +94,15 @@ class ProductionConfigService {
         required: true
       },
       {
-        name: 'SENDGRID_API_KEY',
-        description: 'SendGrid API key for email notifications',
-        url: 'https://app.sendgrid.com/settings/api_keys',
-        required: false
-      },
-      {
         name: 'PLANET_API_KEY',
         description: 'Planet Labs API key for satellite imagery',
         url: 'https://www.planet.com/account/#/user-settings',
+        required: false
+      },
+      {
+        name: 'SENDGRID_API_KEY',
+        description: 'SendGrid API key for email notifications',
+        url: 'https://app.sendgrid.com/settings/api_keys',
         required: false
       },
       {
