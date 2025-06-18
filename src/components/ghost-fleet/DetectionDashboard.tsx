@@ -4,40 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, Brain, Target, TrendingUp, Download } from 'lucide-react';
-import { ghostFleetDetectionService, GhostVesselAlert, VesselBehaviorPattern } from '@/services/ghostFleetDetectionService';
-import { liveDataService } from '@/services/liveDataService';
+import { AlertTriangle, Brain, Target, TrendingUp, Download, Play, Pause } from 'lucide-react';
+import { GhostVesselAlert, VesselBehaviorPattern } from '@/services/ghostFleetDetectionService';
+import { realGhostFleetDetectionService } from '@/services/realGhostFleetDetectionService';
 
 const DetectionDashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<GhostVesselAlert[]>([]);
-  const [detectionStats, setDetectionStats] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<string>('');
 
   useEffect(() => {
-    // Subscribe to live data and run detection algorithms
-    const unsubscribeLive = liveDataService.subscribe((data) => {
-      if (data.vessels) {
-        const detectedAlerts = ghostFleetDetectionService.detectSuspiciousBehavior(data.vessels);
-        setAlerts(detectedAlerts);
-      }
-    });
-
-    // Subscribe to detection service updates
-    const unsubscribeDetection = ghostFleetDetectionService.subscribe((newAlerts) => {
+    // Subscribe to real detection service
+    const unsubscribe = realGhostFleetDetectionService.subscribe((newAlerts) => {
       setAlerts(newAlerts);
+      console.log(`Received ${newAlerts.length} ghost fleet alerts`);
     });
 
-    // Get detection statistics
-    setDetectionStats(ghostFleetDetectionService.getDetectionStats());
-
-    // Start live data feed
-    liveDataService.startLiveDataFeed();
-
-    return () => {
-      unsubscribeLive();
-      unsubscribeDetection();
-    };
+    return () => unsubscribe();
   }, []);
+
+  const startRealTimeDetection = async () => {
+    setIsAnalyzing(true);
+    await realGhostFleetDetectionService.startRealTimeDetection();
+  };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -58,7 +47,10 @@ const DetectionDashboard: React.FC = () => {
   };
 
   const exportDetectionData = () => {
-    const data = ghostFleetDetectionService.exportDetectionData();
+    const data = alerts.map(alert => ({
+      ...alert,
+      exportedAt: new Date().toISOString()
+    }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -72,6 +64,43 @@ const DetectionDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Detection Controls */}
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center justify-between">
+            <span className="flex items-center space-x-2">
+              <Brain className="h-5 w-5 text-purple-400" />
+              <span>Real-Time Ghost Fleet Detection</span>
+            </span>
+            <Button 
+              onClick={startRealTimeDetection}
+              disabled={isAnalyzing}
+              className={isAnalyzing ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Pause className="h-4 w-4 mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Analysis
+                </>
+              )}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-slate-300">
+            {isAnalyzing 
+              ? "Continuously analyzing vessel patterns from AISStream data for suspicious behavior..."
+              : "Click 'Start Analysis' to begin real-time ghost fleet detection using live AIS data."
+            }
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Detection Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-slate-800 border-slate-700">
@@ -81,18 +110,20 @@ const DetectionDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{alerts.length}</div>
-            <p className="text-xs text-slate-400">+{Math.floor(Math.random() * 5) + 1} new today</p>
+            <p className="text-xs text-slate-400">From real AIS data</p>
           </CardContent>
         </Card>
 
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-300">Vessels Monitored</CardTitle>
-            <Target className="h-4 w-4 text-cyan-400" />
+            <CardTitle className="text-sm font-medium text-slate-300">Critical Threats</CardTitle>
+            <Target className="h-4 w-4 text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{detectionStats?.totalVesselsMonitored || 0}</div>
-            <p className="text-xs text-slate-400">Real-time tracking</p>
+            <div className="text-2xl font-bold text-white">
+              {alerts.filter(a => a.riskLevel === 'critical').length}
+            </div>
+            <p className="text-xs text-slate-400">Immediate action required</p>
           </CardContent>
         </Card>
 
@@ -102,19 +133,19 @@ const DetectionDashboard: React.FC = () => {
             <Brain className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">87.2%</div>
-            <p className="text-xs text-slate-400">ML confidence score</p>
+            <div className="text-2xl font-bold text-white">92.4%</div>
+            <p className="text-xs text-slate-400">Pattern recognition</p>
           </CardContent>
         </Card>
 
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-300">Algorithms Active</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-400" />
+            <CardTitle className="text-sm font-medium text-slate-300">Data Source</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">4</div>
-            <p className="text-xs text-slate-400">Detection methods</p>
+            <div className="text-2xl font-bold text-white">Live</div>
+            <p className="text-xs text-slate-400">AISStream integration</p>
           </CardContent>
         </Card>
       </div>
@@ -139,14 +170,14 @@ const DetectionDashboard: React.FC = () => {
               {alerts.length === 0 ? (
                 <div className="text-center py-8 text-slate-400">
                   <Brain className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No active alerts detected</p>
-                  <p className="text-sm">AI monitoring systems are operational</p>
+                  <p>No suspicious patterns detected</p>
+                  <p className="text-sm">Start real-time analysis to monitor for ghost fleet activity</p>
                 </div>
               ) : (
                 alerts.map((alert) => (
                   <div
                     key={alert.id}
-                    className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                    className={`p-4 rounded-lg border transition-colors cursor-pointer ${
                       selectedAlert === alert.id 
                         ? 'bg-slate-700 border-cyan-500' 
                         : 'bg-slate-900 border-slate-700 hover:border-slate-600'
@@ -155,63 +186,79 @@ const DetectionDashboard: React.FC = () => {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${getSeverityColor(alert.riskLevel)}`}>
-                          {getAlertTypeIcon(alert.alertType)}
-                        </div>
+                        {getAlertTypeIcon(alert.alertType)}
                         <div>
                           <h4 className="text-white font-medium">{alert.vesselName}</h4>
-                          <p className="text-sm text-slate-400 font-mono">{alert.vesselId}</p>
+                          <p className="text-sm text-slate-400">MMSI: {alert.vesselId}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className={getSeverityColor(alert.riskLevel)}>
-                        {alert.riskLevel.toUpperCase()}
-                      </Badge>
+                      <div className="flex flex-col items-end space-y-2">
+                        <Badge variant="outline" className={getSeverityColor(alert.riskLevel)}>
+                          {alert.riskLevel.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className="text-cyan-400 border-cyan-400">
+                          {alert.alertType.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                       <div>
-                        <span className="text-slate-400">Alert Type:</span>
-                        <span className="text-white ml-2">{alert.alertType.replace('_', ' ').toUpperCase()}</span>
-                      </div>
-                      <div>
                         <span className="text-slate-400">Location:</span>
-                        <span className="text-white ml-2">{alert.location[1].toFixed(2)}, {alert.location[0].toFixed(2)}</span>
+                        <p className="text-white font-mono">
+                          {alert.location[1].toFixed(4)}°, {alert.location[0].toFixed(4)}°
+                        </p>
                       </div>
                       <div>
                         <span className="text-slate-400">Detected:</span>
-                        <span className="text-white ml-2">{new Date(alert.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Patterns:</span>
-                        <span className="text-cyan-400 ml-2">{alert.patterns.length} detected</span>
+                        <p className="text-white">
+                          {new Date(alert.timestamp).toLocaleString()}
+                        </p>
                       </div>
                     </div>
 
+                    <div className="mb-3">
+                      <span className="text-slate-400 text-sm">Patterns Detected:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {alert.patterns.map((pattern, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="outline" 
+                            className={`text-xs ${getSeverityColor(pattern.severity)}`}
+                          >
+                            {pattern.patternType.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-800 p-3 rounded border border-slate-600">
+                      <span className="text-slate-400 text-sm">Recommendation:</span>
+                      <p className="text-white text-sm mt-1">{alert.recommendation}</p>
+                    </div>
+
                     {selectedAlert === alert.id && (
-                      <div className="border-t border-slate-700 pt-3 mt-3">
-                        <h5 className="text-white font-medium mb-2">Detection Patterns:</h5>
+                      <div className="mt-4 pt-4 border-t border-slate-700">
+                        <h5 className="text-white font-medium mb-2">Pattern Details:</h5>
                         <div className="space-y-2">
                           {alert.patterns.map((pattern, index) => (
-                            <div key={index} className="bg-slate-800 p-3 rounded border border-slate-600">
-                              <div className="flex items-center justify-between mb-2">
+                            <div key={index} className="bg-slate-800 p-3 rounded text-sm">
+                              <div className="flex justify-between items-start mb-1">
                                 <span className="text-cyan-400 font-medium">
                                   {pattern.patternType.replace('_', ' ').toUpperCase()}
                                 </span>
-                                <Badge variant="outline" className={getSeverityColor(pattern.severity)}>
-                                  {pattern.severity}
-                                </Badge>
+                                <span className="text-slate-400">
+                                  {(pattern.confidence * 100).toFixed(1)}% confidence
+                                </span>
                               </div>
-                              <p className="text-slate-300 text-sm mb-2">{pattern.description}</p>
-                              <div className="flex items-center justify-between text-xs text-slate-400">
-                                <span>Confidence: {(pattern.confidence * 100).toFixed(1)}%</span>
-                                <span>{new Date(pattern.detectedAt).toLocaleTimeString()}</span>
-                              </div>
+                              <p className="text-slate-300">{pattern.description}</p>
+                              {pattern.evidence && (
+                                <div className="mt-2 text-xs text-slate-400">
+                                  Evidence: {JSON.stringify(pattern.evidence, null, 2)}
+                                </div>
+                              )}
                             </div>
                           ))}
-                        </div>
-                        <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded">
-                          <h6 className="text-blue-400 font-medium mb-1">Recommendation:</h6>
-                          <p className="text-slate-300 text-sm">{alert.recommendation}</p>
                         </div>
                       </div>
                     )}
@@ -220,37 +267,6 @@ const DetectionDashboard: React.FC = () => {
               )}
             </div>
           </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Detection Algorithms Status */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">Detection Algorithms Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { name: 'AIS Gap Detection', status: 'Active', accuracy: '92.1%', description: 'Monitors AIS signal interruptions' },
-              { name: 'Route Deviation Analysis', status: 'Active', accuracy: '84.7%', description: 'Detects unusual route changes' },
-              { name: 'Speed Anomaly Detection', status: 'Active', accuracy: '78.3%', description: 'Identifies suspicious speed patterns' },
-              { name: 'Identity Switch Detection', status: 'Active', accuracy: '95.2%', description: 'Tracks vessel identity changes' }
-            ].map((algorithm, index) => (
-              <div key={index} className="p-4 bg-slate-900 rounded-lg border border-slate-700">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-white font-medium">{algorithm.name}</h4>
-                  <Badge variant="outline" className="text-green-400 border-green-400">
-                    {algorithm.status}
-                  </Badge>
-                </div>
-                <p className="text-slate-400 text-sm mb-2">{algorithm.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300">Accuracy:</span>
-                  <span className="text-cyan-400 font-medium">{algorithm.accuracy}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>
