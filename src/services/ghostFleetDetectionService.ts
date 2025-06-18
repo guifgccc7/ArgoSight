@@ -1,4 +1,3 @@
-
 export interface VesselBehaviorPattern {
   id: string;
   vesselId: string;
@@ -64,6 +63,7 @@ class GhostFleetDetectionService {
     // Detection Algorithm 1: AIS Signal Gaps
     if (vessel.status === 'dark' || this.hasSignalGap(vessel)) {
       patterns.push({
+        id: `ais-gap-${Date.now()}-${vessel.id}`,
         vesselId: vessel.id,
         patternType: 'ais_gap',
         severity: this.calculateAISGapSeverity(vessel),
@@ -81,6 +81,7 @@ class GhostFleetDetectionService {
     const routeDeviation = this.detectRouteDeviation(vessel);
     if (routeDeviation.isDeviated) {
       patterns.push({
+        id: `route-deviation-${Date.now()}-${vessel.id}`,
         vesselId: vessel.id,
         patternType: 'route_deviation',
         severity: routeDeviation.severity,
@@ -98,6 +99,7 @@ class GhostFleetDetectionService {
     const speedAnomaly = this.detectSpeedAnomaly(vessel, vesselHistory);
     if (speedAnomaly.isAnomalous) {
       patterns.push({
+        id: `speed-anomaly-${Date.now()}-${vessel.id}`,
         vesselId: vessel.id,
         patternType: 'speed_anomaly',
         severity: speedAnomaly.severity,
@@ -114,6 +116,7 @@ class GhostFleetDetectionService {
     // Detection Algorithm 4: Identity Switching
     if (this.detectIdentitySwitch(vessel)) {
       patterns.push({
+        id: `identity-switch-${Date.now()}-${vessel.id}`,
         vesselId: vessel.id,
         patternType: 'identity_switch',
         severity: 'high',
