@@ -1,7 +1,8 @@
 
 export interface VesselBehaviorPattern {
+  id: string;
   vesselId: string;
-  patternType: 'ais_gap' | 'route_deviation' | 'speed_anomaly' | 'identity_switch' | 'dark_fishing';
+  patternType: 'ais_gap' | 'route_deviation' | 'speed_anomaly' | 'identity_switch' | 'dark_fishing' | 'loitering';
   severity: 'low' | 'medium' | 'high' | 'critical';
   confidence: number;
   detectedAt: string;
@@ -9,8 +10,15 @@ export interface VesselBehaviorPattern {
   description: string;
   evidence: {
     timeGap?: number;
+    gapStart?: string;
     deviationDistance?: number;
     speedChange?: number;
+    maxSpeed?: number;
+    avgSpeed?: number;
+    speedVariation?: number;
+    courseChanges?: number;
+    loiteringRadius?: number;
+    duration?: number;
     previousIdentity?: string;
   };
 }

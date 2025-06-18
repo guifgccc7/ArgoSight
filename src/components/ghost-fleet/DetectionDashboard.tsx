@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +19,7 @@ const DetectionDashboard: React.FC = () => {
       console.log(`Received ${newAlerts.length} ghost fleet alerts`);
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   const startRealTimeDetection = async () => {
