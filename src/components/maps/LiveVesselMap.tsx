@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -20,6 +19,7 @@ const LiveVesselMap: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [vessels, setVessels] = useState<VesselPosition[]>([]);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -43,8 +43,9 @@ const LiveVesselMap: React.FC = () => {
     loadVesselData();
 
     // Set up real-time subscription for new vessel positions
-    const channel = supabase
-      .channel('vessel_positions_realtime')
+    const channelName = `vessel_positions_realtime_${Date.now()}`;
+    channelRef.current = supabase
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -64,7 +65,10 @@ const LiveVesselMap: React.FC = () => {
 
     return () => {
       if (map.current) map.current.remove();
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       clearInterval(interval);
     };
   }, []);

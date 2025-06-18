@@ -12,6 +12,7 @@ class RealTimeDataProcessor {
   private metricsCollector: MetricsCollector;
   private dataSourceManager: DataSourceManager;
   private dataProcessor: DataProcessor;
+  private channel: any = null;
 
   constructor() {
     this.metricsCollector = new MetricsCollector();
@@ -22,9 +23,16 @@ class RealTimeDataProcessor {
   }
 
   private startRealTimeDataListener(): void {
-    // Listen to real-time vessel position updates
-    const channel = supabase
-      .channel('vessel_positions_realtime')
+    // Clean up existing channel first
+    if (this.channel) {
+      supabase.removeChannel(this.channel);
+      this.channel = null;
+    }
+
+    // Create new channel with unique name
+    const channelName = `vessel_positions_realtime_${Date.now()}`;
+    this.channel = supabase
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -110,6 +118,14 @@ class RealTimeDataProcessor {
 
   getMetrics(): ProcessingMetrics {
     return this.metricsCollector.getMetrics();
+  }
+
+  // Cleanup method
+  cleanup(): void {
+    if (this.channel) {
+      supabase.removeChannel(this.channel);
+      this.channel = null;
+    }
   }
 }
 

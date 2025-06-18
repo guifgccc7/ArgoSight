@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface VesselData {
@@ -46,6 +45,8 @@ export interface AnalyticsMetric {
 }
 
 class DataIntegrationService {
+  private channels: Map<string, any> = new Map();
+
   // Vessel Management using RPC calls to avoid type issues
   async createVessel(vessel: VesselData) {
     try {
@@ -214,10 +215,11 @@ class DataIntegrationService {
     }
   }
 
-  // Real-time subscriptions using generic channel approach
+  // Real-time subscriptions with proper cleanup
   subscribeToVesselPositions(callback: (payload: any) => void, organizationId?: string) {
+    const channelName = `vessel_positions_changes_${Date.now()}`;
     const channel = supabase
-      .channel('vessel_positions_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -229,12 +231,14 @@ class DataIntegrationService {
       )
       .subscribe();
     
+    this.channels.set(channelName, channel);
     return channel;
   }
 
   subscribeToAlerts(callback: (payload: any) => void, organizationId?: string) {
+    const channelName = `alerts_changes_${Date.now()}`;
     const channel = supabase
-      .channel('alerts_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -246,7 +250,16 @@ class DataIntegrationService {
       )
       .subscribe();
     
+    this.channels.set(channelName, channel);
     return channel;
+  }
+
+  // Cleanup method
+  cleanup() {
+    this.channels.forEach((channel) => {
+      supabase.removeChannel(channel);
+    });
+    this.channels.clear();
   }
 
   // Data import/export utilities
