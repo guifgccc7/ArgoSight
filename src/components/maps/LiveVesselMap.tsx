@@ -106,6 +106,14 @@ const LiveVesselMap: React.FC = () => {
   const updateVesselOnMap = (vessel: VesselPosition) => {
     if (!map.current) return;
 
+    // Validate coordinates
+    if (!vessel.latitude || !vessel.longitude || 
+        vessel.latitude < -90 || vessel.latitude > 90 ||
+        vessel.longitude < -180 || vessel.longitude > 180) {
+      console.warn(`Invalid coordinates for vessel ${vessel.mmsi}: ${vessel.latitude}, ${vessel.longitude}`);
+      return;
+    }
+
     const existingMarker = markersRef.current.get(vessel.mmsi);
     if (existingMarker) {
       existingMarker.remove();
@@ -131,7 +139,7 @@ const LiveVesselMap: React.FC = () => {
       el.style.backgroundColor = isRecent ? '#ff0000' : '#ff8888'; // Red for slow/stationary
     }
 
-    // Create popup
+    // Create popup with correct coordinate display
     const popup = new mapboxgl.Popup({
       offset: 25,
       closeButton: false,
@@ -141,18 +149,22 @@ const LiveVesselMap: React.FC = () => {
         <div><strong>MMSI:</strong> ${vessel.mmsi}</div>
         <div><strong>Speed:</strong> ${vessel.speed_knots?.toFixed(1) || 'N/A'} kts</div>
         <div><strong>Course:</strong> ${vessel.course_degrees?.toFixed(0) || 'N/A'}°</div>
-        <div><strong>Position:</strong> ${vessel.latitude.toFixed(4)}, ${vessel.longitude.toFixed(4)}</div>
+        <div><strong>Position:</strong> ${vessel.latitude.toFixed(4)}°N, ${vessel.longitude.toFixed(4)}°E</div>
         <div><strong>Last Update:</strong> ${new Date(vessel.timestamp_utc).toLocaleTimeString()}</div>
         <div><strong>Source:</strong> ${vessel.source_feed}</div>
       </div>
     `);
 
+    // Ensure correct coordinate order: [longitude, latitude]
     const marker = new mapboxgl.Marker(el)
       .setLngLat([vessel.longitude, vessel.latitude])
       .setPopup(popup)
       .addTo(map.current);
 
     markersRef.current.set(vessel.mmsi, marker);
+
+    // Log coordinate placement for debugging
+    console.log(`Placed vessel ${vessel.mmsi} at [${vessel.longitude}, ${vessel.latitude}]`);
   };
 
   return (

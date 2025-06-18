@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -123,10 +122,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 
     // Add or update vessel markers
     filteredVessels.forEach(vessel => {
+      // Validate coordinates before placing marker
+      if (!vessel.lat || !vessel.lng || 
+          vessel.lat < -90 || vessel.lat > 90 ||
+          vessel.lng < -180 || vessel.lng > 180) {
+        console.warn(`Invalid coordinates for vessel ${vessel.id}: ${vessel.lat}, ${vessel.lng}`);
+        return;
+      }
+
       const existingMarker = vesselMarkers.current[vessel.id];
       
       if (existingMarker) {
-        // Update existing marker position smoothly
+        // Update existing marker position smoothly - ensure correct coordinate order
         existingMarker.setLngLat([vessel.lng, vessel.lat]);
         updateVesselMarkerElement(existingMarker.getElement(), vessel);
         updateVesselPopup(existingMarker, vessel);
@@ -135,12 +142,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         const el = createVesselMarkerElement(vessel);
         const popup = createVesselPopup(vessel);
         
+        // Ensure correct coordinate order: [longitude, latitude]
         const marker = new mapboxgl.Marker(el)
           .setLngLat([vessel.lng, vessel.lat])
           .setPopup(popup)
           .addTo(map.current!);
           
         vesselMarkers.current[vessel.id] = marker;
+        
+        // Log coordinate placement for debugging
+        console.log(`Placed vessel ${vessel.id} at [${vessel.lng}, ${vessel.lat}]`);
       }
     });
   };
@@ -160,6 +171,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         const el = createAlertMarkerElement(alert);
         const popup = createAlertPopup(alert);
         
+        // Ensure correct coordinate order: [longitude, latitude]
         const marker = new mapboxgl.Marker(el)
           .setLngLat(alert.location)
           .setPopup(popup)
@@ -283,6 +295,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           <div class="flex justify-between">
             <span class="text-slate-300">Heading:</span>
             <span class="text-white">${vessel.heading.toFixed(0)}°</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">Position:</span>
+            <span class="text-white">${vessel.lat.toFixed(4)}°N, ${vessel.lng.toFixed(4)}°E</span>
           </div>
           <div class="flex justify-between">
             <span class="text-slate-300">Type:</span>
