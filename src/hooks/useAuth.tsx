@@ -161,7 +161,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase auth error:', error);
+        
+        // Handle specific network errors
+        if (error.message?.includes('Load failed') || error.message?.includes('fetch')) {
+          throw new Error('Unable to connect to authentication service. Please check your internet connection and try again.');
+        }
+        
+        throw error;
+      }
       
       if (data.user) {
         console.log('Login successful');
@@ -169,8 +178,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      setError(error.message || 'Authentication failed');
-      throw new Error(error.message || 'Authentication failed');
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Authentication failed';
+      
+      if (error.message?.includes('Unable to connect')) {
+        errorMessage = error.message;
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password';
+      } else if (error.message?.includes('Load failed') || error.message?.includes('fetch')) {
+        errorMessage = 'Connection failed. Please check your internet connection and try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
