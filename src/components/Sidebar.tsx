@@ -33,6 +33,7 @@ const navigation = [
   { name: "Climate Intel", href: "/climate-intel", icon: CloudSnow },
   { name: "Intelligence DB", href: "/intelligence-db", icon: Search },
   { name: "Integrated Intel", href: "/integrated-intel", icon: Brain },
+  { name: "AI Intelligence", href: "/ai-intelligence", icon: Brain },
   { name: "Advanced Analytics", href: "/advanced-analytics", icon: BarChart3 },
   { name: "Production Admin", href: "/production-admin", icon: Settings },
 ];

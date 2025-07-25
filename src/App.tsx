@@ -22,6 +22,7 @@ import ClimateIntel from "./pages/ClimateIntel";
 import IntelligenceDB from "./pages/IntelligenceDB";
 import IntegratedIntel from "./pages/IntegratedIntel";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+import AIIntelligence from "./pages/AIIntelligence";
 import ProductionAdmin from "./pages/ProductionAdmin";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/climate-intel" element={<ClimateIntel />} />
                 <Route path="/intelligence-db" element={<IntelligenceDB />} />
                 <Route path="/integrated-intel" element={<IntegratedIntel />} />
+                <Route path="/ai-intelligence" element={<AIIntelligence />} />
                 <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
                 <Route path="/production-admin" element={<ProductionAdmin />} />
               </Route>
