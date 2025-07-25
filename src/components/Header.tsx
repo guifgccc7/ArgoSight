@@ -2,11 +2,25 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, User, LogOut, Settings } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Shield, User, LogOut, Settings, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+const navigation = [
+  { name: "Dashboard", href: "/", icon: Shield },
+  { name: "Real-Time Ops", href: "/real-time-operations", icon: Settings },
+  { name: "Ghost Fleet", href: "/ghost-fleet", icon: Shield },
+  { name: "Satellite Imagery", href: "/satellite-imagery", icon: Settings },
+  { name: "Arctic Routes", href: "/arctic-routes", icon: Shield },
+  { name: "Integrated Intel", href: "/integrated-intel", icon: Settings },
+];
 
 const Header = () => {
   const { profile, logout, isAuthenticated } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -44,18 +58,48 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-slate-900 border-b border-slate-700 p-4">
+    <header className="bg-slate-900 border-b border-slate-700 p-4 sticky top-0 z-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="lg:hidden p-2">
+                <Menu className="h-5 w-5 text-white" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 bg-slate-900 border-slate-700">
+              <nav className="flex flex-col space-y-2 mt-8">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-cyan-600 text-white'
+                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </SheetContent>
+          </Sheet>
+          
           <Shield className="h-8 w-8 text-cyan-400" />
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-xl font-bold text-white">ArgoSight</h1>
             <p className="text-sm text-slate-400">Maritime Intelligence Platform</p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="text-right hidden sm:block">
             <div className="text-sm text-white font-medium">
               {profile?.full_name || 'User'}
             </div>

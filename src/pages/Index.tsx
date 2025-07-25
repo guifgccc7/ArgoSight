@@ -121,12 +121,12 @@ const Index = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-white">Maritime Intelligence Command Center</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white">Maritime Intelligence Command Center</h1>
           <p className="text-slate-400 mt-1">Enterprise-grade maritime intelligence platform</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DemoModeToggle isDemoMode={isDemoMode} onChange={setIsDemoMode} />
           <Badge variant="outline" className={`${isLiveDataActive && !isDemoMode ? 'text-green-400 border-green-400' : 'text-slate-400 border-slate-400'}`}>
             {isDemoMode
@@ -224,17 +224,23 @@ const Index = () => {
       </div>
 
       {/* Enhanced Live Maritime Map with Vessel Tracking */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center justify-between">
+              <CardTitle className="text-white flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
                 <span className="flex items-center space-x-2">
                   <span>Global Maritime Activity</span>
-                  {isLiveDataActive && (
+                  {isLiveDataActive && !isDemoMode && (
                     <Badge variant="outline" className="text-green-400 border-green-400">
                       <Activity className="h-3 w-3 mr-1" />
                       LIVE
+                    </Badge>
+                  )}
+                  {isDemoMode && (
+                    <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                      <Zap className="h-3 w-3 mr-1" />
+                      DEMO
                     </Badge>
                   )}
                 </span>
@@ -247,7 +253,7 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-96">
+              <div className="h-64 sm:h-80 lg:h-96">
                 <MapboxMap 
                   showVessels={true}
                   showRoutes={true}
@@ -259,7 +265,7 @@ const Index = () => {
           </Card>
         </div>
 
-        <div>
+        <div className="xl:col-span-1">
           <VesselTrackingPanel 
             focusMode="all"
             selectedVessel={selectedVessel}

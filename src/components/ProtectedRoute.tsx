@@ -8,14 +8,21 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuth();
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+          <div className="text-white text-lg">Loading authentication...</div>
+        </div>
       </div>
     );
+  }
+
+  if (error) {
+    console.error('Auth error in ProtectedRoute:', error);
   }
 
   if (!isAuthenticated) {

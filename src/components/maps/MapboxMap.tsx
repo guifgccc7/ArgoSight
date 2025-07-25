@@ -36,42 +36,58 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    // Initialize map with token
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZ3VpNzc3NyIsImEiOiJjbWJyenl1aDQwY2t1MmlzN2RlbG9jbnVhIn0.Ioi4GvqrDAPLuj_3qOglcg';
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: style,
-      center: center,
-      zoom: zoom,
-    });
+    try {
+      // Initialize map with token
+      mapboxgl.accessToken = 'pk.eyJ1IjoiZ3VpNzc3NyIsImEiOiJjbWJyenl1aDQwY2t1MmlzN2RlbG9jbnVhIn0.Ioi4GvqrDAPLuj_3qOglcg';
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: style,
+        center: center,
+        zoom: zoom,
+        attributionControl: false,
+        logoPosition: 'bottom-right'
+      });
 
-    // Add navigation controls
-    map.current.addControl(
-      new mapboxgl.NavigationControl(),
-      'top-right'
-    );
+      // Add navigation controls
+      map.current.addControl(
+        new mapboxgl.NavigationControl(),
+        'top-right'
+      );
 
-    // Wait for map to load before adding data
-    map.current.on('load', () => {
-      setIsInitialized(true);
-    });
+      // Wait for map to load before adding data
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+        setIsInitialized(true);
+      });
 
-    // Subscribe to live data updates
-    const unsubscribe = liveDataService.subscribe((data) => {
-      setLiveData(data);
-      console.log('Map received live data update:', data);
-    });
+      // Handle map errors
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+      });
 
-    // Start live data feed
-    liveDataService.startLiveDataFeed();
+      // Subscribe to live data updates
+      const unsubscribe = liveDataService.subscribe((data) => {
+        if (data && data.vessels) {
+          setLiveData(data);
+          console.log('Map received live data update:', data);
+        }
+      });
 
-    // Cleanup
-    return () => {
-      unsubscribe();
-      map.current?.remove();
-      map.current = null;
-    };
+      // Start live data feed
+      liveDataService.startLiveDataFeed();
+
+      // Cleanup
+      return () => {
+        unsubscribe();
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
+        }
+      };
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
   }, []); // Empty dependency array - only run once
 
   // Add routes when map is initialized and routes should be shown

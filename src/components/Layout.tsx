@@ -10,11 +10,13 @@ const Layout = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 ml-64 p-6">
+        <main className="flex-1 ml-0 lg:ml-64 p-4 lg:p-6 transition-all duration-300">
           <div className="mb-6 flex justify-end">
             <GlobalDemoModeToggle />
           </div>
-          <Outlet />
+          <div className="max-w-full overflow-hidden">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
