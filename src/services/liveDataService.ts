@@ -108,14 +108,14 @@ class LiveDataService {
     return 'active';
   }
 
-  // Enhanced vessel data generation with suspicious activity simulation
+  // Enhanced vessel data generation with suspicious activity simulation - Maritime focused coordinates
   generateMockVesselData(): VesselData[] {
     const vessels: VesselData[] = [
       {
         id: "IMO-001",
         name: "MV Atlantic Cargo",
-        lat: 40.7128 + (Math.random() - 0.5) * 0.1,
-        lng: -74.0060 + (Math.random() - 0.5) * 0.1,
+        lat: 40.5 + (Math.random() - 0.5) * 0.2, // Atlantic Ocean off NYC
+        lng: -73.5 + (Math.random() - 0.5) * 0.2,
         speed: 12 + Math.random() * 8,
         heading: Math.random() * 360,
         status: 'active',
@@ -131,8 +131,8 @@ class LiveDataService {
       {
         id: "IMO-002",
         name: "Tanker Pacific Star",
-        lat: 35.6762 + (Math.random() - 0.5) * 0.1,
-        lng: 139.6503 + (Math.random() - 0.5) * 0.1,
+        lat: 35.0 + (Math.random() - 0.5) * 0.3, // Pacific Ocean off Japan
+        lng: 140.0 + (Math.random() - 0.5) * 0.5,
         speed: 8 + Math.random() * 6,
         heading: Math.random() * 360,
         status: Math.random() > 0.8 ? 'warning' : 'active',
@@ -148,8 +148,8 @@ class LiveDataService {
       {
         id: "UNKNOWN-003",
         name: "Ghost Vessel Alpha",
-        lat: 51.5074 + (Math.random() - 0.5) * 0.2,
-        lng: -0.1278 + (Math.random() - 0.5) * 0.2,
+        lat: 50.8 + (Math.random() - 0.5) * 0.3, // English Channel
+        lng: -1.5 + (Math.random() - 0.5) * 0.4,
         speed: 0,
         heading: 0,
         status: 'dark',
@@ -165,8 +165,8 @@ class LiveDataService {
       {
         id: "UNKNOWN-004",
         name: "Shadow Runner",
-        lat: 25.2048 + (Math.random() - 0.5) * 0.15,
-        lng: 55.2708 + (Math.random() - 0.5) * 0.15,
+        lat: 25.0 + (Math.random() - 0.5) * 0.3, // Persian Gulf maritime area
+        lng: 55.0 + (Math.random() - 0.5) * 0.5,
         speed: Math.random() * 5,
         heading: Math.random() * 360,
         status: 'dark',
@@ -182,8 +182,8 @@ class LiveDataService {
       {
         id: "IMO-005",
         name: "Northern Explorer",
-        lat: 70.2 + (Math.random() - 0.5) * 0.1,
-        lng: -150.0 + (Math.random() - 0.5) * 0.1,
+        lat: 70.5 + (Math.random() - 0.5) * 0.2, // Arctic Ocean
+        lng: -150.0 + (Math.random() - 0.5) * 1.0,
         speed: 6 + Math.random() * 4,
         heading: Math.random() * 360,
         status: Math.random() > 0.7 ? 'warning' : 'active',
@@ -229,7 +229,7 @@ class LiveDataService {
         id: `alert-${Date.now()}`,
         type: 'ghost_vessel',
         severity: Math.random() > 0.7 ? 'critical' : 'high',
-        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        location: [this.generateMaritimeCoordinate().lng, this.generateMaritimeCoordinate().lat],
         description: 'AI detected vessel AIS manipulation pattern',
         timestamp: new Date().toISOString()
       });
@@ -240,7 +240,7 @@ class LiveDataService {
         id: `alert-${Date.now() + 1}`,
         type: 'security',
         severity: 'high',
-        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        location: [this.generateMaritimeCoordinate().lng, this.generateMaritimeCoordinate().lat],
         description: 'Unusual vessel behavior detected by ML algorithms',
         timestamp: new Date().toISOString()
       });
@@ -251,7 +251,7 @@ class LiveDataService {
         id: `alert-${Date.now() + 2}`,
         type: 'weather',
         severity: 'medium',
-        location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+        location: [this.generateMaritimeCoordinate().lng, this.generateMaritimeCoordinate().lat],
         description: 'Severe weather conditions detected',
         timestamp: new Date().toISOString()
       });
@@ -323,7 +323,7 @@ class LiveDataService {
       id: `alert-${Date.now() + 3}`,
       type: 'ghost_vessel',
       severity: 'high',
-      location: [Math.random() * 360 - 180, Math.random() * 180 - 90],
+      location: [this.generateMaritimeCoordinate().lng, this.generateMaritimeCoordinate().lat],
       description: 'AI detected suspicious vessel behavior',
       timestamp: new Date().toISOString()
     };
@@ -333,6 +333,30 @@ class LiveDataService {
       alerts: this.alerts,
       timestamp: new Date().toISOString()
     });
+  }
+
+  // Generate realistic maritime coordinates (avoiding land masses)
+  private generateMaritimeCoordinate(): { lat: number; lng: number } {
+    const maritimeAreas = [
+      // North Atlantic
+      { lat: 45 + Math.random() * 15, lng: -60 + Math.random() * 40 },
+      // Mediterranean
+      { lat: 35 + Math.random() * 8, lng: 5 + Math.random() * 30 },
+      // Pacific Ocean
+      { lat: 20 + Math.random() * 30, lng: 140 + Math.random() * 40 },
+      // Indian Ocean
+      { lat: -10 + Math.random() * 20, lng: 60 + Math.random() * 40 },
+      // Arctic Ocean
+      { lat: 70 + Math.random() * 10, lng: -120 + Math.random() * 60 },
+      // South China Sea
+      { lat: 10 + Math.random() * 15, lng: 110 + Math.random() * 15 },
+      // Gulf of Mexico
+      { lat: 25 + Math.random() * 5, lng: -95 + Math.random() * 10 },
+      // Red Sea
+      { lat: 20 + Math.random() * 8, lng: 38 + Math.random() * 5 }
+    ];
+
+    return maritimeAreas[Math.floor(Math.random() * maritimeAreas.length)];
   }
 
   // Stop live data simulation
