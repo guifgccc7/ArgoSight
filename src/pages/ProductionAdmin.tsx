@@ -3,6 +3,7 @@ import React from "react";
 import ProductionDashboard from "@/components/admin/ProductionDashboard";
 import ApiStatusPanel from "@/components/ApiStatusPanel";
 import WeatherImageDisplay from "@/components/WeatherImageDisplay";
+import RealDataStatus from "@/components/admin/RealDataStatus";
 
 const ProductionAdmin = () => {
   return (
@@ -13,6 +14,9 @@ const ProductionAdmin = () => {
           System administration, API monitoring, and production data management
         </p>
       </div>
+
+      {/* Real Data Status */}
+      <RealDataStatus />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Dashboard */}

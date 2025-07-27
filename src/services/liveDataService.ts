@@ -48,34 +48,127 @@ class LiveDataService {
   private subscribers: Set<(data: LiveDataUpdate) => void> = new Set();
 
   constructor() {
-    // Initialize with AISStream integration
-    this.initializeAISStream();
+    // Initialize with real database integration
+    this.initializeRealDataIntegration();
   }
 
-  private async initializeAISStream(): Promise<void> {
-    const { aisStreamService } = await import('./aisStreamService');
-    
-    // Subscribe to real AIS data
-    aisStreamService.subscribe((aisData) => {
-      this.updateVesselFromAIS(aisData);
-    });
-
-    // Start the AIS stream
-    await aisStreamService.startAISStream();
+  private async initializeRealDataIntegration(): Promise<void> {
+    try {
+      // Import supabase client
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Start AIS stream integration
+      await this.startAISStreamIntegration();
+      
+      // Subscribe to real-time database updates
+      this.subscribeToRealTimeUpdates();
+      
+      console.log('Real data integration initialized');
+    } catch (error) {
+      console.error('Error initializing real data integration:', error);
+      console.log('Falling back to demo mode');
+    }
   }
 
-  private updateVesselFromAIS(aisData: any): void {
-    const vesselData: VesselData = {
-      id: aisData.mmsi,
-      name: aisData.shipName,
-      lat: aisData.latitude,
-      lng: aisData.longitude,
-      speed: aisData.speed,
-      heading: aisData.course,
-      vesselType: 'commercial',
-      status: this.determineVesselStatus(aisData),
-      lastUpdate: aisData.timestamp
-    };
+  private async startAISStreamIntegration(): Promise<void> {
+
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Call the AISStream integration edge function
+      const { data, error } = await supabase.functions.invoke('aisstream-integration');
+      
+      if (error) {
+        console.error('Error starting AIS stream:', error);
+        throw error;
+      }
+      
+      console.log('AIS stream integration started:', data);
+    } catch (error) {
+      console.error('Failed to start AIS stream integration:', error);
+      throw error;
+    }
+  }
+
+  private async subscribeToRealTimeUpdates(): Promise<void> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Subscribe to vessel position updates
+      const channel = supabase
+        .channel('vessel_positions_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'vessel_positions'
+          },
+          (payload) => {
+            console.log('New vessel position received:', payload.new);
+            this.updateVesselFromDatabase(payload.new as any);
+          }
+        )
+        .subscribe();
+
+      // Load initial vessel data
+      await this.loadInitialVesselData();
+      
+      console.log('Real-time updates subscribed');
+    } catch (error) {
+      console.error('Error subscribing to real-time updates:', error);
+      throw error;
+    }
+  }
+
+  private async loadInitialVesselData(): Promise<void> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase
+        .from('vessel_positions')
+        .select(`
+          id, mmsi, latitude, longitude, speed_knots, course_degrees, 
+          timestamp_utc, source_feed, navigation_status,
+          vessels (vessel_name, vessel_type, status)
+        `)
+        .gte('timestamp_utc', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
+        .order('timestamp_utc', { ascending: false });
+
+      if (error) {
+        console.error('Error loading vessel data:', error);
+        return;
+      }
+
+      // Get latest position for each vessel
+      const latestPositions = new Map();
+      data?.forEach((position: any) => {
+        if (!latestPositions.has(position.mmsi) || 
+            new Date(position.timestamp_utc) > new Date(latestPositions.get(position.mmsi).timestamp_utc)) {
+          latestPositions.set(position.mmsi, position);
+        }
+      });
+
+      // Convert to VesselData format
+      this.vessels = Array.from(latestPositions.values()).map((pos: any) => 
+        this.convertDatabaseToVesselData(pos)
+      );
+
+      console.log(`Loaded ${this.vessels.length} real vessels from database`);
+      
+      // Notify subscribers
+      this.notifySubscribers({
+        vessels: this.vessels,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error loading initial vessel data:', error);
+    }
+  }
+
+  private updateVesselFromDatabase(dbVessel: any): void {
+
+    const vesselData = this.convertDatabaseToVesselData(dbVessel);
 
     // Update or add vessel
     const existingIndex = this.vessels.findIndex(v => v.id === vesselData.id);
@@ -92,17 +185,36 @@ class LiveDataService {
     });
   }
 
-  private determineVesselStatus(aisData: any): 'active' | 'warning' | 'danger' | 'dark' {
-    const timeDiff = Date.now() - new Date(aisData.timestamp).getTime();
+  private convertDatabaseToVesselData(dbVessel: any): VesselData {
+    return {
+      id: dbVessel.mmsi,
+      name: dbVessel.vessels?.vessel_name || `Vessel-${dbVessel.mmsi}`,
+      lat: dbVessel.latitude,
+      lng: dbVessel.longitude,
+      speed: dbVessel.speed_knots || 0,
+      heading: dbVessel.course_degrees || 0,
+      vesselType: dbVessel.vessels?.vessel_type || 'unknown',
+      status: this.determineVesselStatusFromDB(dbVessel),
+      lastUpdate: dbVessel.timestamp_utc
+    };
+  }
+
+  private determineVesselStatusFromDB(dbVessel: any): 'active' | 'warning' | 'danger' | 'dark' {
+    const timeDiff = Date.now() - new Date(dbVessel.timestamp_utc).getTime();
     
-    // If data is older than 30 minutes, consider it potentially dark
-    if (timeDiff > 30 * 60 * 1000) {
+    // If data is older than 2 hours, consider it potentially dark
+    if (timeDiff > 2 * 60 * 60 * 1000) {
       return 'dark';
     }
     
     // Check for suspicious patterns
-    if (aisData.speed > 30) {
+    if (dbVessel.speed_knots > 30) {
       return 'warning'; // Very high speed
+    }
+    
+    // Check vessel status from database
+    if (dbVessel.vessels?.status === 'suspicious') {
+      return 'danger';
     }
     
     return 'active';
@@ -295,10 +407,10 @@ class LiveDataService {
     if (this.isActive) return;
     
     this.isActive = true;
-    console.log('Starting live data feed with real AIS integration...');
+    console.log('Starting live data feed with real vessel integration...');
 
-    // The AIS data will come through the AISStream service
-    // Keep existing simulation for other data types
+    // Real data integration is already initialized in constructor
+    // Just start additional monitoring for alerts
     this.simulateAdditionalData();
   }
 
